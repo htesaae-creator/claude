@@ -478,6 +478,13 @@ kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);bo
 :root[data-fs="xl"]{font-size:19.5px} :root[data-fs="xl"] body{font-size:18.3px}
 :root[data-lh="w"] body{line-height:1.9} :root[data-lh="w"] .body-text p,:root[data-lh="w"] .body-text li,:root[data-lh="w"] .sum-sec li,:root[data-lh="w"] .cz-sent{line-height:2.05}
 @media print{.fl-pop{display:none!important}}
+.pill.mine{background:var(--warn-soft);color:var(--warn);font-weight:700;font-size:.74rem;white-space:nowrap}
+.myq-form{border-top:1px solid var(--line);padding-top:10px}
+.myq-l{display:flex;flex-direction:column;gap:4px}
+.myq-l select,.myq-l textarea,.myq-opt input[type=text]{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);width:100%;box-sizing:border-box}
+.myq-l textarea{resize:vertical}
+.myq-opt{display:grid;grid-template-columns:22px 22px 1fr;align-items:center;gap:6px}
+.myq-opt input[type=radio]{width:18px;height:18px;accent-color:var(--ok)}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -5235,7 +5242,7 @@ function defaultState(){
   return {v:1, settings:{start: t>'2026-10-12'?t:'2026-10-12', exam:EXAM.date, wd:2, we:5,
     prof:Object.fromEntries(SUBJ.map(s=>[s.id,s.prof]))},
     checklist:{}, done:{}, mocks:[], cards:{known:{}, custom:[], sr:{}}, read:{}, qs:{}, wrong:{}, studied:{}, bookmark:null,
-    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, tm:{}, updated:''};
+    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, tm:{}, myq:[], updated:''};
 }
 function normalize(d){
   const s=defaultState(); if(!d||typeof d!=='object') return s;
@@ -5253,6 +5260,7 @@ function normalize(d){
     studied:{...(d.studied||{})},
     bookmark:typeof d.bookmark==='string'?d.bookmark:null,
     tm:Object.fromEntries(Object.entries(d.tm||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>[k, Object.fromEntries(Object.entries(v).map(([s,m])=>[s, m|0]))])),
+    myq:Array.isArray(d.myq)?d.myq.filter(m=>m&&typeof m.id==='string'&&(m.type==='mc'&&Array.isArray(m.c)||m.type==='cz'&&typeof m.sent==='string')).map(m=>({...m, c:m.c?m.c.slice():undefined})):[],
     qmemo:Object.fromEntries(Object.entries(d.qmemo||{}).filter(([k,v])=>typeof v==='string'&&v)),
     rv:d.rv&&typeof d.rv.d==='string'&&Array.isArray(d.rv.s)?{d:d.rv.d, s:d.rv.s.slice()}:{d:'',s:[]},
     marks:Object.fromEntries(Object.entries(d.marks||{}).map(([k,v])=>[k, Array.isArray(v)?v.filter(m=>m&&typeof m.t==='string'&&m.t).map(m=>({...m, ok:m.ok|0, ng:m.ng|0})):[]])),
@@ -5399,6 +5407,7 @@ function renderHeader(){
 }
 function renderAll(){ renderHeader(); renderSync(); if(TAB==='plan') renderPlanForm(); renderTab(); }
 function renderTab(){
+  myqSync();
   ({today:renderToday, plan:renderPlanOut, book:renderBook, summary:renderSummary, quiz:renderQuiz, score:renderScore, subjects:renderSubjects, cards:renderCards, cloze:renderCloze, exam:renderExam})[TAB]();
   if(TAB==='plan' && !$('#plan-form').innerHTML) renderPlanForm();
 }
@@ -6593,6 +6602,7 @@ function eveHTML(){
 }
 function eveAct(act, a){ if(act==='eve-print'){ runPrint(a.dataset.how, `AFPK 시험 전날 요약 ${todayStr()}`, `<section class="pr-page"><div class="pr-title"><span class="eyebrow">제95회 AFPK · 시험 전날 1시간 요약</span><h2>내가 자주 틀린 것 + 시험 포인트</h2></div>${eveBodyHTML()}</section>`); } }
 function featAct(act, a){
+  if(act.startsWith('myq-')){ myqAct(act, a); return true; }
   if(act==='fl-close'){ flPop=null; flPopRender(); return true; }
   if(act==='fl-tm'){ flPop=flPop==='tm'?null:'tm'; flPopRender(); return true; }
   if(act==='fl-fs'){ flPop=flPop==='fs'?null:'fs'; flPopRender(); return true; }
@@ -6610,6 +6620,118 @@ function featAct(act, a){
   if(act.startsWith('eve-')){ eveAct(act, a); return true; }
   return false;
 }
+
+/* ===================== 내가 만든 문제: 객관식·빈칸. 예상문제·빈칸암기·암기카드에 함께 출제 =====================
+   state.myq = [{id:'my-…', type:'mc'|'cz', s, u, q, c:[4], a, e} | {…, sent:'…[정답|다른 답]…'}] (동기화)
+   불러올 때마다 QB·CLOZE 목록에 끼워 넣어, 단원별 풀이·오답·약점·모의고사·빈칸암기에 그대로 섞여 나온다. */
+let myqRef=null, myqEdit=null, myqListOpen=false;
+const isMine=id=>String(id).startsWith('my-');
+const MY_BADGE='<span class="pill mine">✍ 내가 만든 문제</span>';
+const myBadge=id=>isMine(id)?MY_BADGE:'';
+function myqParse(sent){
+  const m=String(sent||'').match(/^([\s\S]*?)\[([^\]]+)\]([\s\S]*)$/); if(!m) return null;
+  const answers=m[2].split('|').map(x=>x.trim()).filter(Boolean); if(!answers.length) return null;
+  return {before:m[1].replace(/\[|\]/g,''), ans:answers[0], alts:answers.slice(1), after:m[3].replace(/\[|\]/g,'')};
+}
+function myClozeItem(m){ const p=myqParse(m.sent); return p ? {id:m.id, u:m.u, s:m.s, src:'내가 만든', kind:czKind(p.ans), ...p, mine:true} : null; }
+function myqSync(force){
+  if(!force && myqRef===state.myq && (!CLOZE || CLOZE.myqDone===state.myq)) return; myqRef=state.myq;
+  for(let i=QB.length-1;i>=0;i--) if(QB[i].mine) QB.splice(i,1);
+  Object.keys(QB_BY).forEach(k=>{ if(isMine(k)) delete QB_BY[k]; });
+  if(CLOZE){ for(let i=CLOZE.length-1;i>=0;i--) if(CLOZE[i].mine) CLOZE.splice(i,1); Object.keys(CLOZE_BY).forEach(k=>{ if(isMine(k)) delete CLOZE_BY[k]; }); CLOZE.myqDone=state.myq; }
+  (state.myq||[]).forEach(m=>{
+    if(!SUMMARY[m.s] || !SUMMARY[m.s].some(u=>u.id===m.u)) return;
+    if(m.type==='mc'){ const q={id:m.id, type:'mc', u:m.u, s:m.s, q:m.q, c:m.c.slice(0,4), a:m.a, e:m.e||'내가 만든 문제입니다.', mine:true}; QB.push(q); QB_BY[q.id]=q; }
+    else if(CLOZE){ const c=myClozeItem(m); if(c){ CLOZE.push(c); CLOZE_BY[c.id]=c; } }
+  });
+}
+function myCards(){
+  return (state.myq||[]).map(m=>{
+    if(m.type==='mc') return {id:'c'+m.id, s:m.s, u:m.u, q:m.q, a:`${MARK[m.a]} ${m.c[m.a]}${m.e?`\n${m.e}`:''}`, src:'mine', myq:true};
+    const p=myqParse(m.sent); return p ? {id:'c'+m.id, s:m.s, u:m.u, q:`${p.before}(   )${p.after}`, a:[p.ans, ...p.alts].join(' / '), src:'mine', myq:true} : null;
+  }).filter(Boolean);
+}
+function myqCardHTML(){
+  const L=state.myq||[], mc=L.filter(m=>m.type==='mc').length, cz=L.filter(m=>m.type==='cz').length;
+  return `<div class="card stack myq-card"><div class="sec-head"><h2>✍ 내가 만든 문제</h2><span class="small muted">객관식 ${mc} · 빈칸 ${cz}</span></div>
+    ${myqEdit?myqFormHTML():`<div class="row"><button class="btn pri" data-act="myq-new" data-t="mc">+ 객관식 만들기</button><button class="btn pri" data-act="myq-new" data-t="cz">+ 빈칸 문제 만들기</button></div>
+      <div class="row"><button class="btn" data-act="myq-run" data-t="mc" ${mc?'':'disabled'}>내가 만든 객관식 풀기 ${mc}</button><button class="btn" data-act="myq-run" data-t="cz" ${cz?'':'disabled'}>내가 만든 빈칸 풀기 ${cz}</button><button class="btn" data-act="myq-list" aria-expanded="${myqListOpen}">${myqListOpen?'목록 닫기':'목록·수정'}</button></div>
+      <p class="small muted" style="margin:0">만든 문제는 예상문제(단원별·오답·약점·모의고사), 빈칸암기, 암기카드에도 함께 나오고 <span class="pill mine">✍ 내가 만든 문제</span>로 표시됩니다. 다른 기기와도 동기화됩니다.</p>
+      ${myqListOpen?myqListHTML():''}`}</div>`;
+}
+function myqFormHTML(){
+  const E=myqEdit, units=SUMMARY[E.s]||[];
+  return `<div class="myq-form stack">
+    <div class="chips" role="group" aria-label="문제 유형"><button class="chipbtn" data-act="myq-type" data-t="mc" aria-pressed="${E.type==='mc'}">객관식 (4지선다)</button><button class="chipbtn" data-act="myq-type" data-t="cz" aria-pressed="${E.type==='cz'}">빈칸</button></div>
+    <div class="row"><label class="small myq-l">과목<select class="myq-s">${SUBJ.map(s=>`<option value="${s.id}" ${E.s===s.id?'selected':''}>${s.name}</option>`).join('')}</select></label>
+      <label class="small myq-l" style="flex:1;min-width:200px">단원<select class="myq-u">${units.map(u=>`<option value="${u.id}" ${E.u===u.id?'selected':''}>${esc(u.title)}</option>`).join('')}</select></label></div>
+    ${E.type==='mc'?`<label class="small myq-l">문제<textarea class="myq-q" rows="2" placeholder="예) 보장성 금융상품의 청약철회 기간으로 옳은 것은?">${esc(E.q||'')}</textarea></label>
+      <div class="stack" style="gap:6px"><span class="small">보기 · 정답인 보기의 동그라미를 누르세요</span>${[0,1,2,3].map(i=>`<label class="myq-opt"><input type="radio" name="myq-a" class="myq-a" value="${i}" ${E.a===i?'checked':''} aria-label="${i+1}번을 정답으로"><span>${MARK[i]}</span><input type="text" class="myq-c" data-i="${i}" value="${esc((E.c||[])[i]||'')}" placeholder="보기 ${i+1}"></label>`).join('')}</div>
+      <label class="small myq-l">해설 (선택)<textarea class="myq-e" rows="2" placeholder="정답인 이유, 헷갈리는 점">${esc(E.e||'')}</textarea></label>`
+    :`<label class="small myq-l">문장 · 빈칸으로 만들 부분을 [대괄호]로 감싸세요<textarea class="myq-sent" rows="3" placeholder="예) 보장성 상품의 청약철회는 증권을 받은 날부터 [15일] 이내에 할 수 있다.">${esc(E.sent||'')}</textarea></label>
+      <span class="small muted">다른 답도 맞게 하려면 | 로 나누세요. 예) [15일|보름] · 대괄호는 한 곳만</span>
+      <div class="small myq-pv">${myqPvHTML(E.sent)}</div>`}
+    <div class="row"><button class="btn pri" data-act="myq-save">${E.id?'수정 저장':'저장'}</button>${E.id?'':`<button class="btn" data-act="myq-save" data-more="1">저장하고 하나 더</button>`}<button class="btn" data-act="myq-cancel">취소</button>${E.id?`<button class="btn danger" data-act="myq-del">삭제</button>`:''}</div></div>`;
+}
+function myqPvHTML(sent){ const p=myqParse(sent); return p?`미리보기 · ${esc(p.before)}<span class="mk-blank">${'　'.repeat(Math.min(8,Math.max(2,p.ans.length)))}</span>${esc(p.after)} → 정답 <b>${esc(p.ans)}</b>${p.alts.length?` (또는 ${esc(p.alts.join(', '))})`:''}`:''; }
+function myqListHTML(){
+  const L=(state.myq||[]).slice().reverse(); if(!L.length) return '<div class="empty">아직 만든 문제가 없습니다.</div>';
+  return `<div class="cl">${L.map(m=>{ const u=ALL_SECS.find(s=>s.id===m.u), st=m.type==='mc'?qStat(m.id):czStat(m.id);
+    return `<div class="cl-item" style="grid-template-columns:1fr auto"><div class="stack" style="gap:2px;min-width:0"><span class="small">${chip(m.s)} <span class="pill">${m.type==='mc'?'객관식':'빈칸'}</span> <span class="muted">${u?esc(u.title):''}</span></span>
+      <span>${m.type==='mc'?esc(m.q):esc(m.sent).replace(/\[([^\]]+)\]/,(x,y)=>`<mark>${y}</mark>`)}</span>${m.type==='mc'?`<span class="small muted">정답 ${MARK[m.a]} ${esc(m.c[m.a])}</span>`:''}
+      <span class="small muted">${st[0]?`${st[0]}회 풀이 · 정답률 ${Math.round(st[1]/st[0]*100)}%`:'아직 안 풀어 봄'}</span></div>
+      <button class="btn sm" data-act="myq-edit" data-id="${m.id}">수정</button></div>`; }).join('')}</div>`;
+}
+function myqRead(){
+  const E=myqEdit, f=document.querySelector('.myq-form'); if(!E||!f) return;
+  const v=sel=>{ const x=f.querySelector(sel); return x?x.value:undefined; };
+  if(v('.myq-s')) E.s=v('.myq-s'); if(v('.myq-u')) E.u=v('.myq-u');
+  if(E.type==='mc'){ E.q=v('.myq-q')||''; E.c=[...f.querySelectorAll('.myq-c')].map(x=>x.value); E.e=v('.myq-e')||''; const r=f.querySelector('.myq-a:checked'); E.a=r?+r.value:-1; }
+  else E.sent=v('.myq-sent')||'';
+}
+function myqRerender(){ document.querySelectorAll('.myq-card').forEach(el=>{ const w=document.createElement('div'); w.innerHTML=myqCardHTML(); el.replaceWith(w.firstElementChild); }); }
+function myqDefaults(type){
+  const s=TAB==='quiz'?qzSubj:(czF&&czF.s!=='all'?czF.s:'intro'), u=(czF&&czF.u!=='all'&&TAB==='cloze')?czF.u:SUMMARY[s][0].id;
+  return {type, s, u, q:'', c:['','','',''], a:-1, e:'', sent:''};
+}
+function myqAct(act, a){
+  if(act==='myq-new'){ myqEdit=myqDefaults(a.dataset.t); myqRerender(); const f=document.querySelector('.myq-form textarea'); if(f) f.focus(); return; }
+  if(act==='myq-type'){ myqRead(); myqEdit.type=a.dataset.t; myqRerender(); return; }
+  if(act==='myq-cancel'){ myqEdit=null; myqRerender(); return; }
+  if(act==='myq-list'){ myqListOpen=!myqListOpen; myqRerender(); return; }
+  if(act==='myq-edit'){ const m=(state.myq||[]).find(x=>x.id===a.dataset.id); if(!m) return; myqEdit={...myqDefaults(m.type), ...m, c:(m.c||['','','','']).slice()}; myqRerender(); document.querySelector('.myq-card')?.scrollIntoView({block:'start'}); return; }
+  if(act==='myq-del'){ const id=myqEdit&&myqEdit.id; if(!id) return; state.myq=(state.myq||[]).filter(x=>x.id!==id); delete state.qs[id]; delete state.cz[id]; delete state.wrong[id]; delete state.sr[id]; save(); myqEdit=null; myqSync(); myqRerender(); toast('문제를 삭제했습니다.', 2000); return; }
+  if(act==='myq-save'){
+    myqRead(); const E=myqEdit; let m;
+    if(E.type==='mc'){
+      const c=E.c.map(x=>x.trim());
+      if(!E.q.trim()){ toast('문제를 적어 주세요.', 2500); return; }
+      if(c.some(x=>!x)){ toast('보기 4개를 모두 적어 주세요.', 2500); return; }
+      if(!(E.a>=0)){ toast('정답인 보기의 동그라미를 눌러 주세요.', 2500); return; }
+      m={type:'mc', s:E.s, u:E.u, q:E.q.trim(), c, a:E.a, e:E.e.trim()};
+    } else {
+      if(!myqParse(E.sent)){ toast('빈칸으로 만들 부분을 [대괄호]로 감싸 주세요. 예) 청약철회는 [15일] 이내', 3500); return; }
+      m={type:'cz', s:E.s, u:E.u, sent:E.sent.trim()};
+    }
+    m.id=E.id||('my-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)); m.at=E.at||todayStr();
+    const L=(state.myq||[]).filter(x=>x.id!==m.id); L.push(m); state.myq=L; save(); myqSync();
+    const keep=a.dataset.more ? {...myqDefaults(m.type), s:m.s, u:m.u} : null; myqEdit=keep; myqRerender();
+    toast(E.id?'수정했습니다.':'저장했습니다. 예상문제·빈칸암기·암기카드에 함께 나옵니다.', 2600); if(keep) document.querySelector('.myq-form textarea')?.focus(); return;
+  }
+  if(act==='myq-run'){
+    myqSync();
+    if(a.dataset.t==='mc'){ const qs=QB.filter(q=>q.mine); if(qs.length) startQuiz('practice', '내가 만든 객관식', shuffleArr(qs)); return; }
+    const cs=czAll().filter(c=>c.mine); if(!cs.length) return; mkRunS=null; czStart(shuffleArr(cs), '내가 만든 빈칸'); if(TAB!=='cloze') goTab('cloze', renderCloze); return;
+  }
+}
+document.addEventListener('change', e=>{
+  const t=e.target; if(!t || !t.closest || !t.closest('.myq-form')) return;
+  if(t.classList.contains('myq-s')){ myqRead(); myqEdit.u=SUMMARY[myqEdit.s][0].id; myqRerender(); }
+});
+document.addEventListener('input', e=>{
+  const t=e.target; if(!t || !t.classList || !t.classList.contains('myq-sent')) return;
+  const pv=t.closest('.myq-form').querySelector('.myq-pv'); if(pv) pv.innerHTML=myqPvHTML(t.value);
+});
 
 /* ===================== 기본서 (처음부터 끝까지 읽기) ===================== */
 const BOOK_ORDER = SUBJ.map(s=>s.id);   /* 시험 과목 순서: 모듈1 → 모듈2 */
@@ -8505,7 +8627,7 @@ function studyRunHTML(){
     </div>
     <div class="progress"><div style="width:${(qz.idx+1)/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
-      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u.title}</span></span>${neg?'<span class="pill warn">틀린 것을 고르는 문제</span>':''}</div>
+      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u.title}</span> ${myBadge(q.id)}</span>${neg?'<span class="pill warn">틀린 것을 고르는 문제</span>':''}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${opts}</div>
       ${panels}
@@ -8557,14 +8679,14 @@ function quizHomeHTML(){
       <button data-act="qz-view" data-v="trend" aria-pressed="${qzView==='trend'}">출제 경향</button>
       <button data-act="qz-view" data-v="calc" aria-pressed="${qzView==='calc'}">계산 연습</button>
     </div>`;
-  if(qzView==='calc') return tiles + calcHTML();
-  if(qzView==='sum') return tiles + sumCardsHTML();
-  if(qzView==='trend') return tiles + trendHTML();
+  if(qzView==='calc') return tiles + myqCardHTML() + calcHTML();
+  if(qzView==='sum') return tiles + myqCardHTML() + sumCardsHTML();
+  if(qzView==='trend') return tiles + myqCardHTML() + trendHTML();
   if(qzView==='exam'){
     const mins=n=>Math.ceil(n*170/150);
     const groups=[['intro','ethics'],['retire'],['estate'],['inherit'],['risk'],['invest'],['tax']];
     const gName=g=>g.map(id=>SUBJ_BY[id].name.replace(/^재무설계 /,'')).join('·');
-    return tiles + `
+    return tiles + myqCardHTML() + `
     <div class="card stack">
       <div class="sec-head"><h2>실전 모의고사</h2><span class="small muted">150문항 · 모듈1 90분 → 모듈2 80분</span></div>
       <p class="small muted">공식 샘플 시험지와 같은 모양으로 냅니다. 2단 시험지, 과목 구분 띠, 보기 박스(가~라 묶음형, 가~다↔A~C 연결형), 오른쪽 OMR 답안지, 남은 시간 표시. 시험지에서 보기를 누르거나 답안지 칸을 칠하면 됩니다. 채점은 제출한 뒤에만 합니다.</p>
@@ -8594,7 +8716,7 @@ function quizHomeHTML(){
     </div>
     ${printExamPanelHTML()}`;
   }
-  return tiles + `
+  return tiles + myqCardHTML() + `
     <div class="card stack">
       <div class="sec-head"><h2>과목별 학습·연습</h2><span class="small muted">이해 완료 전체 <b class="num">${studiedAll}</b>/${QB.length}</span></div>
       <div class="chips">${STUDY_ORDER.map(id=>`<button class="chipbtn" data-act="qz-subj" data-s="${id}" aria-pressed="${qzSubj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${QB.filter(q=>q.s===id).length}</span></button>`).join('')}</div>
@@ -8641,7 +8763,7 @@ function quizRunHTML(){
     </div>
     <div class="progress"><div style="width:${(qz.idx+1)/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
-      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u?u.title:''}</span></span>
+      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u?u.title:''}</span> ${myBadge(q.id)}</span>
         ${mock?'':`<button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${u?esc(u.t):''}">본문 보기</button>`}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${it.o.map((orig,k)=>choiceHTML(it,q,k,orig,chosen,shown)).join('')}</div>
@@ -9232,7 +9354,7 @@ function sheetQHTML(i, extra, mark){
   const it=qz.items[i], q=QB_BY[it.id];
   const fl=!!(qz.flags&&qz.flags[it.id]);
   const flagEl = mark ? (fl?'<span class="flagbtn" aria-label="표시했던 문제" style="cursor:default">🚩</span>':'') : `<button class="flagbtn" data-act="qz-flag" data-i="${i}" aria-pressed="${fl}" aria-label="${i+1}번 나중에 볼 문제로 표시" title="나중에 볼 문제로 표시">🚩</button>`;
-  return `<div class="q" id="qq-${i}"><div class="q-stem"><span class="no">${i+1}.</span><span>${stemHTML(q.q)}</span>${flagEl}</div>${qBoxHTML(q)}${sheetOptsHTML(q,it,i,qz.ans[it.id],mark)}${extra||''}</div>`;
+  return `<div class="q" id="qq-${i}"><div class="q-stem"><span class="no">${i+1}.</span><span>${stemHTML(q.q)}${q.mine?' '+MY_BADGE:''}</span>${flagEl}</div>${qBoxHTML(q)}${sheetOptsHTML(q,it,i,qz.ans[it.id],mark)}${extra||''}</div>`;
 }
 /* 과목 띠: 개론·윤리는 샘플처럼 한 띠로 묶는다 */
 const barKey=s=>s==='ethics'?'intro':s;
@@ -10683,7 +10805,8 @@ function buildCloze(){
   return items;
 }
 function czAll(){
-  if(!CLOZE){ CLOZE=buildCloze(); CLOZE_BY=Object.fromEntries(CLOZE.map(c=>[c.id,c]));
+  if(CLOZE) myqSync();
+  if(!CLOZE){ CLOZE=buildCloze(); CLOZE_BY=Object.fromEntries(CLOZE.map(c=>[c.id,c])); myqSync(true);
     Object.keys(state.cz).forEach(k=>{ if(!CLOZE_BY[k]) delete state.cz[k]; }); }   // 예전 자동 생성 빈칸의 기록은 정리
   return CLOZE;
 }
@@ -10731,7 +10854,7 @@ function czHomeHTML(){
     return `<div class="cl-item" style="grid-template-columns:1fr auto"><div style="min-width:0"><div style="font-weight:600">${esc(u.title)}</div>
       <div class="small muted">빈칸 ${us.length}개 · 푼 빈칸 ${t.length} · ${a?`정답률 <span style="${k/a<0.6?'color:var(--bad);font-weight:700':''}">${Math.round(k/a*100)}%</span>`:'미응시'} · 틀린 적 있는 빈칸 ${w}</div></div>
       <button class="btn sm pri" data-act="cz-unit" data-u="${u.id}" ${us.length?'':'disabled'}>시작</button></div>`; }).join('');
-  return mkRunCardHTML()+`
+  return mkRunCardHTML()+myqCardHTML()+`
     <div class="tiles">
       <div class="tile"><div class="k">전체 빈칸</div><div class="v">${all.length}</div></div>
       <div class="tile"><div class="k">푼 빈칸</div><div class="v">${tried.length}<span class="muted small"> / ${all.length}</span></div></div>
@@ -10780,7 +10903,7 @@ function czRunHTML(){
       <div class="row"><span class="small">정답 <b class="num" style="color:var(--ok)">${okN}</b> · 오답 <b class="num" style="color:var(--bad)">${noN}</b></span><button class="btn sm" data-act="cz-quit">그만하기</button></div></div>
     <div class="progress"><div style="width:${(S.idx+(S.checked?1:0))/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
-      <div class="row between"><span class="small">${chip(c.s)} <span class="muted">${esc(u?u.title:'')} · ${c.src} · ${c.kind==='num'?'숫자':'용어'}</span></span>
+      <div class="row between"><span class="small">${chip(c.s)} <span class="muted">${esc(u?u.title:'')} · ${c.src} · ${c.kind==='num'?'숫자':'용어'}</span> ${myBadge(c.id)}</span>
         <span class="small muted">${st[0]?`지금까지 ${st[0]}회 중 ${st[0]-st[1]}회 틀림`:'처음 보는 빈칸'}</span></div>
       ${body}
     </div>`;
@@ -10874,7 +10997,7 @@ function buildCardPool(){
   const so=id=>STUDY_ORDER.indexOf(id), sr={core:0,table:1,quiz:2}, ui=c=>c.u?ALL_SECS.findIndex(s=>s.id===c.u):-1;
   return out.map((c,i)=>({c,i})).sort((A,B)=>(so(A.c.s)-so(B.c.s))||(sr[A.c.src]-sr[B.c.src])||(ui(A.c)-ui(B.c))||(A.i-B.i)).map(o=>o.c);
 }
-function allCards(){ if(!CARD_POOL) CARD_POOL=buildCardPool(); return CARD_POOL.concat(state.cards.custom.map(c=>({...c, custom:true, src:'mine'}))); }
+function allCards(){ if(!CARD_POOL) CARD_POOL=buildCardPool(); return CARD_POOL.concat(state.cards.custom.map(c=>({...c, custom:true, src:'mine'})), myCards()); }
 function cardDue(c){ const r=state.cards.sr[c.id]; return !!(r && r.due<=todayStr()); }
 function cardPool(){ return allCards().filter(c=>(cf.subj==='all'||c.s===cf.subj)&&(cf.src==='all'||c.src===cf.src)&&(!cf.unknown||!state.cards.known[c.id])&&(!cf.due||cardDue(c))); }
 function renderCards(){
@@ -10882,7 +11005,7 @@ function renderCards(){
   const pool=cardPool(); if(cf.idx>=pool.length) cf.idx=0;
   const c=pool[cf.idx];
   const card = c ? `<div class="card fc" data-act="flip" role="button" tabindex="0" aria-label="카드 뒤집기">
-      <div class="row between"><span>${chip(c.s)} <span class="pill" style="font-size:.72rem">${SRC_LABEL[c.src]||''}</span> <span class="muted small">${c.u?(ALL_SECS.find(s=>s.id===c.u)||{}).title||SUBJ_BY[c.s].name:SUBJ_BY[c.s].name}</span></span><span class="num muted small">${cf.idx+1} / ${pool.length}</span></div>
+      <div class="row between"><span>${chip(c.s)} ${c.myq?MY_BADGE:`<span class="pill" style="font-size:.72rem">${SRC_LABEL[c.src]||''}</span>`} <span class="muted small">${c.u?(ALL_SECS.find(s=>s.id===c.u)||{}).title||SUBJ_BY[c.s].name:SUBJ_BY[c.s].name}</span></span><span class="num muted small">${cf.idx+1} / ${pool.length}</span></div>
       <div class="q" style="white-space:pre-line">${esc(c.q)}</div>
       ${cf.flip?`<div class="a">${esc(c.a)}</div>`:`<div class="hint">눌러서 답 보기</div>`}
     </div>
