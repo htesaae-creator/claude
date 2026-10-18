@@ -420,19 +420,14 @@ abbr[title]{text-decoration:underline dotted;text-underline-offset:3px;cursor:he
 body.mk-on .mk-area{cursor:text;-webkit-user-select:text;user-select:text}
 body[data-mk="hl-x"] .uhl, body[data-mk="cz-x"] .ucz{cursor:not-allowed;outline:1px dashed var(--bad)}
 .mk-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.mk-dd{position:relative;display:inline-flex}
-.mk-menu{position:absolute;left:0;top:calc(100% + 4px);z-index:25;display:flex;flex-direction:column;min-width:200px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.mk-opt{font:inherit;text-align:left;background:none;border:0;color:var(--ink);padding:8px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;gap:1px}
-.mk-opt small{color:var(--muted);font-size:.78rem}
-.mk-opt:hover{background:var(--line2)}
-.mk-opt[aria-checked="true"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
-body[data-mk="hl-x"] .mk-btn[data-k="hl"], body[data-mk="cz-x"] .mk-btn[data-k="cz"]{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
 .mk-stats-box{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
 .mk-pop{position:absolute;z-index:30;display:flex;gap:6px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .mk-o,.mk-x{font:inherit;font-weight:700;min-width:40px;min-height:34px;border-radius:8px;cursor:pointer;border:1px solid}
 .mk-o{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)} .mk-x{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
-#mk-float{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;gap:8px;align-items:center;background:var(--ink);color:var(--paper);padding:8px 10px 8px 14px;border-radius:999px;font-size:.88rem;box-shadow:0 6px 20px rgba(0,0,0,.25)}
-body[data-mk$="-x"] #mk-float{background:var(--bad);color:#fff}
+#mk-float{position:fixed;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.mk-fb{font:inherit;font-size:.9rem;font-weight:700;min-height:44px;padding:0 16px;border-radius:999px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);-webkit-user-select:none;user-select:none;white-space:nowrap}
+.mk-fb[data-st="on"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mk-fb[data-st="x"]{background:var(--bad);border-color:var(--bad);color:#fff}
 @media print{.mk-tools,.mk-stats-box,#mk-float,.mk-pop{display:none!important}}
 </style>
 
@@ -5840,20 +5835,16 @@ function renderSumList(){
 /* ===================== 내 형광펜 · 빈칸뚫기 (본문·요약, 기본서) =====================
    표시는 state.marks[단원]에 {id, k:'hl'|'cz', t:고른 글자, pre:바로 앞 글자, ok, ng, last}로 저장한다.
    위치는 글자와 그 앞 글자로 다시 찾으므로 '본문 + 요약'과 '요약만' 보기, 기본서에서 같은 표시가 보인다. */
-let mkMode=null, mkMenu=null, mkStatsOpen=false, mkSort='ng', mkDragging=false, mkSelT=null;
+let mkMode=null, mkStatsOpen=false, mkSort='ng', mkDragging=false, mkSelT=null;
 const MK_LABEL={hl:'🖍 형광펜', 'hl-x':'🧽 형광펜 지우기', cz:'▭ 빈칸뚫기', 'cz-x':'🧽 빈칸 제거'};
 const MK_HELP={hl:'글자를 드래그하면 형광펜이 칠해집니다', 'hl-x':'드래그한 부분의 형광펜을 지웁니다 (형광펜을 눌러도 지워짐)', cz:'드래그한 부분이 빈칸으로 가려집니다', 'cz-x':'드래그한 부분의 빈칸을 없앱니다 (빈칸을 눌러도 없어짐)'};
 const mkList=uid=>(state.marks[uid]=state.marks[uid]||[]);
 function mkToolsHTML(){
   const on=k=>mkMode===k||mkMode===k+'-x';
   return `<div class="mk-tools" role="group" aria-label="내 형광펜·빈칸">
-      ${['hl','cz'].map(k=>`<span class="mk-dd"><button class="chipbtn mk-btn" data-act="mk-mode" data-k="${k}" aria-pressed="${on(k)}" aria-haspopup="menu" aria-expanded="${mkMenu===k}">${on(k)?MK_LABEL[mkMode]:MK_LABEL[k]} ▾</button>${mkMenu===k?`<span class="mk-menu" role="menu">
-        <button class="mk-opt" role="menuitemradio" data-act="mk-set" data-v="${k}" aria-checked="${mkMode===k}">${k==='hl'?'🖍 형광펜 칠하기':'▭ 빈칸 만들기'}<small>드래그하면 ${k==='hl'?'칠해집니다':'가려집니다'}</small></button>
-        <button class="mk-opt" role="menuitemradio" data-act="mk-set" data-v="${k}-x" aria-checked="${mkMode===k+'-x'}">${k==='hl'?'🧽 형광펜 지우기':'🧽 빈칸 제거'}<small>드래그하거나 눌러서 ${k==='hl'?'지웁니다':'없앱니다'}</small></button>
-        ${on(k)?`<button class="mk-opt" role="menuitem" data-act="mk-set" data-v="">끄기<small>평소처럼 읽기</small></button>`:''}</span>`:''}</span>`).join('')}
       <button class="btn sm" data-act="mk-stats" aria-expanded="${mkStatsOpen}">빈칸 통계</button>
       <button class="btn sm" data-act="mk-hideall">빈칸 다시 가리기</button>
-      <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'버튼을 누르면 칠하기(만들기)·지우기(제거) 중에서 고를 수 있습니다'}</span>
+      <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'오른쪽 아래 🖍 형광펜 · ▭ 빈칸 버튼을 누를 때마다 칠하기(만들기) → 지우기(제거) → 끄기 순서로 바뀝니다'}</span>
     </div>
     <div class="mk-stats-box" ${mkStatsOpen?'':'hidden'}>${mkStatsOpen?mkStatsHTML():''}</div>`;
 }
@@ -5862,9 +5853,11 @@ function mkRefreshUI(){
   document.querySelectorAll('.mk-stats-box').forEach(el=>{ el.hidden=!mkStatsOpen; el.innerHTML=mkStatsOpen?mkStatsHTML():''; });
   document.body.classList.toggle('mk-on', !!mkMode); document.body.dataset.mk=mkMode||'';
   let f=$('#mk-float');
-  if(mkMode && (TAB==='summary'||TAB==='book')){
-    if(!f){ f=document.createElement('div'); f.id='mk-float'; document.body.appendChild(f); }
-    f.innerHTML=`<span>${MK_LABEL[mkMode]} 모드</span><button class="btn sm" data-act="mk-off">끄기</button>`;
+  if(TAB==='summary'||TAB==='book'){
+    if(!f){ f=document.createElement('div'); f.id='mk-float'; f.setAttribute('role','group'); f.setAttribute('aria-label','형광펜·빈칸 도구'); document.body.appendChild(f); }
+    const st=k=>mkMode===k?'on':mkMode===k+'-x'?'x':'off';
+    const lab={hl:{off:'🖍 형광펜',on:'🖍 칠하기',x:'🧽 형광펜 지우기'}, cz:{off:'▭ 빈칸',on:'▭ 빈칸 만들기',x:'🧽 빈칸 제거'}};
+    f.innerHTML=['hl','cz'].map(k=>`<button class="mk-fb" data-act="mk-cycle" data-k="${k}" data-st="${st(k)}" aria-pressed="${st(k)!=='off'}" title="누를 때마다 ${k==='hl'?'칠하기 → 지우기':'만들기 → 제거'} → 끄기">${lab[k][st(k)]}</button>`).join('');
   } else if(f) f.remove();
 }
 /* 단원 영역의 글자 노드 (그림·버튼 안 글자는 제외) */
@@ -5955,7 +5948,6 @@ document.addEventListener('selectionchange', ()=>{   // 폰에서 선택 손잡�
 document.addEventListener('click', e=>{
   const t=e.target; if(!t.closest) return;
   if(!t.closest('#mk-pop') && !t.closest('.ucz')) mkPopClose();
-  if(mkMenu && !t.closest('.mk-dd')){ mkMenu=null; mkRefreshUI(); }
   const sp=t.closest('.uhl,.ucz'); if(!sp || !getSelection().isCollapsed) return;
   const mid=sp.dataset.mid, [uid]=mkFindMark(mid);
   if(sp.classList.contains('uhl') && mkMode==='hl-x'){ state.marks[uid]=mkList(uid).filter(m=>m.id!==mid); save(); mkRedraw(uid); return; }
@@ -5989,9 +5981,7 @@ function mkStatsHTML(){
     :'<div class="empty">아직 만든 빈칸이 없습니다. "빈칸뚫기"를 켜고 본문 글자를 드래그해 보세요.</div>'}`;
 }
 function handleMk(act, a){
-  if(act==='mk-mode'){ const k=a.dataset.k; mkMenu = mkMenu===k ? null : k; mkPopClose(); mkRefreshUI(); return; }
-  if(act==='mk-set'){ mkMode=a.dataset.v||null; mkMenu=null; mkPopClose(); mkRefreshUI(); return; }
-  if(act==='mk-off'){ mkMode=null; mkMenu=null; mkRefreshUI(); return; }
+  if(act==='mk-cycle'){ const k=a.dataset.k; mkMode = mkMode===k ? k+'-x' : mkMode===k+'-x' ? null : k; mkPopClose(); mkRefreshUI(); return; }
   if(act==='mk-stats'){ mkStatsOpen=!mkStatsOpen; mkRefreshUI(); return; }
   if(act==='mk-sort'){ mkSort=a.dataset.v; mkRefreshUI(); return; }
   if(act==='mk-hideall'){ document.querySelectorAll('.ucz.open').forEach(x=>x.classList.remove('open')); mkPopClose(); return; }
