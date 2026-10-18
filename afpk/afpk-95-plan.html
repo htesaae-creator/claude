@@ -485,6 +485,24 @@ kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);bo
 .myq-l textarea{resize:vertical}
 .myq-opt{display:grid;grid-template-columns:22px 22px 1fr;align-items:center;gap:6px}
 .myq-opt input[type=radio]{width:18px;height:18px;accent-color:var(--ok)}
+.pred-list{display:flex;flex-direction:column;gap:6px}
+.pred-row{display:grid;grid-template-columns:38px 1fr 48px 78px;gap:8px;align-items:center}
+.pred-track{position:relative;height:10px;background:var(--line2);border-radius:5px}
+.pred-fill{height:100%;background:var(--accent);border-radius:5px} .pred-row.fail .pred-fill{background:var(--bad)}
+.pred-track i{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)} .pred-track i.pass{background:var(--muted);opacity:.6}
+.uhl[data-auto]{background:var(--warn-soft);box-shadow:inset 0 -2px 0 var(--warn)}
+.rx-note{background:var(--warn-soft);border-radius:8px;padding:6px 10px}
+.note-s h3{margin:18px 0 6px} .note-u h4{margin:10px 0 4px} .note-u ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px}
+.mk-tools .note{flex-basis:100%}
+#sel-pop{position:absolute;z-index:30;display:flex;gap:4px;background:var(--ink);border-radius:999px;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#sel-pop button{font:inherit;font-size:.85rem;font-weight:700;border:0;background:transparent;color:var(--paper);padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+#sel-pop button:hover{background:rgba(255,255,255,.15)}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:6vh 12px;overflow:auto}
+.modal-box{width:min(640px,100%)} .modal-box .myq-card{box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.vs-q{font-size:1.08rem;line-height:1.6;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0}
+.vs-lead{font-size:.82rem;font-weight:700;color:var(--accent)}
+.vs-opts{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+@media print{#sel-pop,.modal{display:none!important}}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -5242,7 +5260,7 @@ function defaultState(){
   return {v:1, settings:{start: t>'2026-10-12'?t:'2026-10-12', exam:EXAM.date, wd:2, we:5,
     prof:Object.fromEntries(SUBJ.map(s=>[s.id,s.prof]))},
     checklist:{}, done:{}, mocks:[], cards:{known:{}, custom:[], sr:{}}, read:{}, qs:{}, wrong:{}, studied:{}, bookmark:null,
-    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, tm:{}, myq:[], updated:''};
+    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, tm:{}, myq:[], vs:{}, updated:''};
 }
 function normalize(d){
   const s=defaultState(); if(!d||typeof d!=='object') return s;
@@ -5260,6 +5278,7 @@ function normalize(d){
     studied:{...(d.studied||{})},
     bookmark:typeof d.bookmark==='string'?d.bookmark:null,
     tm:Object.fromEntries(Object.entries(d.tm||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>[k, Object.fromEntries(Object.entries(v).map(([s,m])=>[s, m|0]))])),
+    vs:Object.fromEntries(Object.entries(d.vs||{}).filter(([k,v])=>Array.isArray(v)).map(([k,v])=>[k,[v[0]|0,v[1]|0]])),
     myq:Array.isArray(d.myq)?d.myq.filter(m=>m&&typeof m.id==='string'&&(m.type==='mc'&&Array.isArray(m.c)||m.type==='cz'&&typeof m.sent==='string')).map(m=>({...m, c:m.c?m.c.slice():undefined})):[],
     qmemo:Object.fromEntries(Object.entries(d.qmemo||{}).filter(([k,v])=>typeof v==='string'&&v)),
     rv:d.rv&&typeof d.rv.d==='string'&&Array.isArray(d.rv.s)?{d:d.rv.d, s:d.rv.s.slice()}:{d:'',s:[]},
@@ -5473,6 +5492,7 @@ function renderToday(){
     </div>
     ${P.total?`<div class="progress" aria-label="학습 진행률"><div style="width:${Math.min(100,doneH/P.total*100)}%"></div></div>`:''}
     ${resumeCardHTML()}
+    ${predictCardHTML()}
     ${todayCard}
     ${reviewCardHTML()}
     ${tmCardHTML()}
@@ -5912,7 +5932,11 @@ function mkToolsHTML(){
       <button class="btn sm" data-act="mk-stats" aria-expanded="${mkStatsOpen}">빈칸 통계</button>
       <button class="btn sm" data-act="mk-hideall">빈칸 다시 가리기</button>
       <button class="btn sm" data-act="mk-notes" aria-expanded="${mkNotesOpen}">내 메모 ${mkNoteCount()}</button>
+      <button class="btn sm" data-act="book-part" data-p="note">형광펜 노트</button>
+      <button class="btn sm" data-act="mk-conv" aria-expanded="${!!mkConv}">형광펜 → 빈칸</button>
+      <button class="chipbtn" data-act="rx-toggle" aria-pressed="${rxOn}" title="예상문제를 틀리면 관련 본문 문장에 자동으로 형광펜(↻)을 칠합니다">오답 자동 형광펜 ${rxOn?'켜짐':'꺼짐'}</button>
       <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'오른쪽 아래 🖍 형광펜 · ▭ 빈칸 버튼은 누를 때마다 칠하기(만들기) → 지우기(제거) → 끄기, 📝 메모는 켜기 ↔ 끄기'}</span>
+      ${mkConvHTML()}
     </div>
     <div class="mk-stats-box" ${mkStatsOpen?'':'hidden'}>${mkStatsOpen?mkStatsHTML():''}</div>
     <div class="mk-notes-box" ${mkNotesOpen?'':'hidden'}>${mkNotesOpen?mkNotesHTML():''}</div>`;
@@ -5952,7 +5976,7 @@ function mkWrap(area, s, e, m){
     if(le<L) node.splitText(le);
     if(ls>0) node=node.splitText(ls);
     if(!node.length || !node.textContent.trim()) return;
-    const sp=document.createElement('span'); sp.className={hl:'uhl',cz:'ucz',nt:'unt'}[m.k]||'uhl'; sp.dataset.mid=m.id;
+    const sp=document.createElement('span'); sp.className={hl:'uhl',cz:'ucz',nt:'unt'}[m.k]||'uhl'; if(m.auto) sp.dataset.auto='1'; sp.dataset.mid=m.id;
     node.parentNode.insertBefore(sp,node); sp.appendChild(node);
   });
 }
@@ -6602,7 +6626,8 @@ function eveHTML(){
 }
 function eveAct(act, a){ if(act==='eve-print'){ runPrint(a.dataset.how, `AFPK 시험 전날 요약 ${todayStr()}`, `<section class="pr-page"><div class="pr-title"><span class="eyebrow">제95회 AFPK · 시험 전날 1시간 요약</span><h2>내가 자주 틀린 것 + 시험 포인트</h2></div>${eveBodyHTML()}</section>`); } }
 function featAct(act, a){
-  if(act.startsWith('myq-')){ myqAct(act, a); return true; }
+  if(act.startsWith('myq-')){ myqAct(act, a); myqModalSync(); return true; }
+  if(feat3Act(act, a)) return true;
   if(act==='fl-close'){ flPop=null; flPopRender(); return true; }
   if(act==='fl-tm'){ flPop=flPop==='tm'?null:'tm'; flPopRender(); return true; }
   if(act==='fl-fs'){ flPop=flPop==='fs'?null:'fs'; flPopRender(); return true; }
@@ -6733,6 +6758,225 @@ document.addEventListener('input', e=>{
   const pv=t.closest('.myq-form').querySelector('.myq-pv'); if(pv) pv.innerHTML=myqPvHTML(t.value);
 });
 
+/* ===================== 편의 기능 3: 예상 점수 · 오답 자동 처방 · 형광펜 노트 · 형광펜→빈칸 · 본문에서 문제 만들기 · 헷갈리는 개념 고르기 ===================== */
+
+/* ---- 1. 예상 점수: 푼 문제 정답률에, 기록이 적은 과목은 학습 플랜의 사전 숙련도를 섞어 추정 ---- */
+const PRED_K=12;   // 기록 12문항만큼의 무게를 사전값에 준다
+function predictScores(){
+  const out={};
+  SUBJ.forEach(s=>{
+    let a=0, c=0; QB.forEach(q=>{ if(q.s!==s.id) return; const st=qStat(q.id); a+=st[0]; c+=st[1]; });
+    const prof=(state.settings.prof||{})[s.id]; const prior=0.5+0.4*(prof==null?s.prof:prof);
+    const acc=(c+prior*PRED_K)/(a+PRED_K);
+    out[s.id]={a, c, acc, raw:a?c/a:null, n:Math.round(acc*s.q)};
+  });
+  return out;
+}
+function predictCardHTML(){
+  const P=predictScores(), sc=Object.fromEntries(SUBJ.map(s=>[s.id,P[s.id].n])), r=evaluate(sc), att=SUBJ.reduce((x,s)=>x+P[s.id].a,0);
+  const get=id=>sc[id];
+  return `<div class="card stack"><div class="sec-head"><h2>지금 시험 보면</h2><span class="pill ${r.cls}">${r.verdict}</span></div>
+    <div class="verdict"><span class="big">${r.total}<span class="muted" style="font-size:1rem"> / ${TOTAL_Q}</span></span><span class="small muted">합격선 ${PASS_Q}문항(70%) · ${r.need?`<b style="color:var(--bad)">${r.need}문항 더</b> 필요`:'<b style="color:var(--ok)">합격선 넘음</b>'}</span></div>
+    <div class="pred-list">${SUBJ.map(s=>{ const p=P[s.id], fail=failOf(s,get), fl=failLine(s)/failQ(s);
+      return `<div class="pred-row${fail?' fail':''}"><span class="small"><b>${s.short}</b></span>
+        <div class="pred-track" title="과락선 ${Math.round(fl*100)}%"><div class="pred-fill" style="width:${Math.round(p.acc*100)}%"></div><i style="left:${fl*100}%"></i><i class="pass" style="left:70%"></i></div>
+        <span class="small num">${p.n}/${s.q}</span><span class="small ${fail?'':'muted'}">${fail?'<b style="color:var(--bad)">과락 위험</b>':p.a<10?'기록 부족':`정답률 ${Math.round(p.raw*100)}%`}</span></div>`; }).join('')}</div>
+    <p class="small muted" style="margin:0">예상문제에서 푼 ${att}회 기록으로 계산합니다. 푼 문제가 적은 과목은 학습 플랜의 과목 숙련도를 섞어 추정하므로 문제를 풀수록 정확해집니다. 빨간 세로선 = 과락선, 회색 세로선 = 70%.</p>
+    ${r.fails.length?`<div class="row">${r.fails.map(f=>{ const id=f.grp?'intro':f.id; return `<button class="btn sm pri" data-act="qz-subj-go" data-s="${id}">${SUBJ_BY[id].short} 문제 풀러 가기</button>`; }).join('')}</div>`:''}</div>`;
+}
+
+/* ---- 2. 오답 자동 처방: 틀린 문제와 가장 관련 깊은 본문 문장에 형광펜, 정답 낱말이 그 문장에 있으면 빈칸까지 ---- */
+let rxOn=true; try{ rxOn=localStorage.getItem('afpk95-rx')!=='0'; }catch(e){}
+function rxPick(q){
+  const rel=relatedBody(q); if(!rel) return null;
+  const sens=blockText(rel.b).split(/(?<=[.?!])\s+/).map(x=>x.trim()).filter(x=>x.length>=8);
+  let best=null, bs=0; sens.forEach(x=>{ const sc=rel.tk.reduce((n,t)=>n+(x.includes(t)?1:0),0); if(sc>bs){ bs=sc; best=x; } });
+  if(!best || bs<2) return null;
+  // 영문 약어 뒤에는 화면에서 풀이가 덧붙으므로, 약어가 있으면 약어 사이의 가장 긴 조각만 쓴다
+  if(/[A-Za-z]{2,}/.test(best)){ const parts=best.split(/[A-Za-z][A-Za-z0-9&\-]+/).map(x=>x.trim()).sort((a,b)=>b.length-a.length); best=parts[0]||''; }
+  best=best.replace(/^[,·\s]+|[,·\s]+$/g,'').slice(0,160);
+  return best.length>=10 ? best : null;
+}
+function rxApply(id, ok){
+  const q=QB_BY[id]; if(!q || q.mine || !BODY[q.u]) return;
+  const L=mkList(q.u), has=L.some(m=>m.auto===id);
+  if(ok){ if(has && !state.wrong[id] && !state.sr[id]) state.marks[q.u]=L.filter(m=>m.auto!==id); return; }   // 복습까지 끝나면 처방을 거둔다
+  if(!rxOn || has) return;
+  const t=rxPick(q); if(!t) return;
+  const nid=()=>'rx'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const base={ok:0, ng:0, last:null, at:todayStr(), auto:id};
+  L.push({...base, id:nid(), k:'hl', t, pre:''});
+  const ans=String((q.c||[])[q.a]||'').trim(), i=ans.length>=2 && ans.length<=20 ? t.indexOf(ans) : -1;
+  if(i>=0) L.push({...base, id:nid(), k:'cz', t:ans, pre:t.slice(Math.max(0,i-24), i)});
+  state.marks[q.u]=L;
+}
+function rxNoteHTML(q){
+  if(!q || !q.u || !(state.marks[q.u]||[]).some(m=>m.auto===q.id)) return '';
+  return `<div class="small rx-note">↻ 이 문제와 관련된 본문 문장에 형광펜을 칠해 두었습니다${(state.marks[q.u]||[]).some(m=>m.auto===q.id&&m.k==='cz')?' (정답 낱말은 빈칸)':''}. <button class="lnk" data-act="book-go" data-u="${q.u}">본문에서 보기</button></div>`;
+}
+
+/* ---- 3. 형광펜 노트: 내 형광펜·메모·빈칸만 과목·단원 순서로 ---- */
+function noteBodyHTML(){
+  const units=ALL_SECS.filter(s=>(state.marks[s.id]||[]).length);
+  if(!units.length) return '<div class="empty">아직 칠한 형광펜·메모·빈칸이 없습니다. 본문·요약이나 기본서에서 오른쪽 아래 버튼으로 표시해 보세요.</div>';
+  return SUBJ.map(S=>{ const us=units.filter(u=>u.subj===S.id); if(!us.length) return '';
+    return `<section class="note-s"><h3>${S.name}</h3>${us.map(u=>{ const L=state.marks[u.id], ord=m=>({hl:0,nt:1,cz:2})[m.k];
+      return `<div class="note-u"><h4>${u.title} <button class="lnk small" data-act="book-go" data-u="${u.id}">보러 가기</button></h4><ul>${L.slice().sort((a,b)=>ord(a)-ord(b)).map(m=>
+        m.k==='hl' ? `<li><span class="uhl"${m.auto?' data-auto="1"':''}>${esc(m.t)}</span>${m.auto?' <span class="small muted">↻ 오답 관련</span>':''}</li>`
+        : m.k==='nt' ? `<li><span class="unt">${esc(m.t)}</span><div class="small">📝 ${esc(m.n||'')}</div></li>`
+        : `<li>▭ <b>${esc(m.t)}</b> <span class="small muted">빈칸${m.ok+m.ng?` · O ${m.ok} X ${m.ng}`:''}</span></li>`).join('')}</ul></div>`; }).join('')}</section>`; }).join('');
+}
+function noteHTML(){
+  const n=Object.values(state.marks).reduce((a,l)=>a+l.length,0);
+  return `<header class="part-head"><span class="eyebrow">부록</span><h2>형광펜 노트</h2><span class="small muted">내가 칠한 형광펜, 메모, 빈칸 ${n}개를 과목·단원 순서로 모았습니다. 나만의 요약 노트로 쓰세요.</span></header>
+    <div class="row"><button class="btn pri" data-act="note-print" data-how="print">🖨 인쇄</button><button class="btn" data-act="note-print" data-how="file">인쇄용 파일 저장</button></div>${noteBodyHTML()}`;
+}
+
+/* ---- 4. 형광펜 → 빈칸 한 번에 (지금 화면에 보이는 단원) ---- */
+let mkConv=null;
+function mkConvUnits(){ return [...new Set([...document.querySelectorAll('.mk-area')].map(a=>a.dataset.mu))]; }
+function mkConvCount(){ return mkConvUnits().reduce((a,u)=>a+(state.marks[u]||[]).filter(m=>m.k==='hl').length,0); }
+function mkConvHTML(){ if(!mkConv) return ''; const n=mkConvCount();
+  return `<div class="note row" style="gap:8px"><span>${n?`지금 화면의 단원 ${mkConvUnits().length}개에서 형광펜 <b>${n}곳</b>을 빈칸으로 바꿀까요?`:'지금 화면에 칠한 형광펜이 없습니다.'}</span>${n?'<button class="btn sm pri" data-act="mk-conv-ok">빈칸으로 바꾸기</button>':''}<button class="btn sm" data-act="mk-conv-no">취소</button></div>`; }
+function mkConvDo(){
+  let n=0; mkConvUnits().forEach(u=>{ const L=state.marks[u]||[];
+    L.forEach(m=>{ if(m.k!=='hl') return; const dup=L.some(x=>x.k==='cz' && x.t===m.t); if(dup){ m.k='__del'; return; } m.k='cz'; m.ok=0; m.ng=0; m.last=null; n++; });
+    state.marks[u]=L.filter(m=>m.k!=='__del'); mkRedraw(u); });
+  save(); mkConv=null; mkRefreshUI(); toast(`형광펜 ${n}곳을 빈칸으로 바꿨습니다. 빈칸을 눌러 확인하고 O·X를 고르세요.`, 3500);
+}
+
+/* ---- 5. 본문에서 바로 문제 만들기: 형광펜·빈칸·메모 모드가 꺼진 상태에서 글자를 고르면 작은 버튼이 뜬다 ---- */
+let selCtx=null, selT=null;
+function selPopHide(){ const p=$('#sel-pop'); if(p) p.remove(); }
+function selPopShow(){
+  if(mkMode){ selPopHide(); return; }
+  const sel=getSelection(); if(!sel || sel.isCollapsed || !sel.rangeCount){ selPopHide(); return; }
+  const r=sel.getRangeAt(0), st=r.startContainer.nodeType===1?r.startContainer:r.startContainer.parentElement, area=st && st.closest && st.closest('.mk-area');
+  if(!area){ selPopHide(); return; }
+  const t=sel.toString().replace(/\s+/g,' ').trim(); if(!t || t.length>80 || /\n/.test(sel.toString().trim())){ selPopHide(); return; }
+  const blk=st.closest('p,li,td,th,.tip,.cap,pre,h4,figcaption')||st, full=blk.textContent.replace(/\s+/g,' ').trim(), i=full.indexOf(t);
+  let sen=full; if(i>=0){ let a=full.lastIndexOf('. ', i); a=a<0?0:a+2; let b=full.indexOf('. ', i+t.length); b=b<0?full.length:b+1; sen=full.slice(a,b).trim(); }
+  if(sen.length>220 && i>=0){ const k=sen.indexOf(t); sen=sen.slice(Math.max(0,k-90), k+t.length+90); }
+  selCtx={uid:area.dataset.mu, t, sen};
+  let p=$('#sel-pop'); if(!p){ p=document.createElement('div'); p.id='sel-pop'; document.body.appendChild(p); }
+  p.innerHTML=`<button data-act="sel-cz">✍ 빈칸 문제로</button><button data-act="sel-mc">✍ 객관식으로</button>`;
+  const rc=r.getBoundingClientRect(), pw=p.offsetWidth||220;
+  p.style.left=Math.max(8, Math.min(innerWidth-pw-8, rc.left+rc.width/2-pw/2))+'px'; p.style.top=(rc.bottom+scrollY+10)+'px';
+}
+document.addEventListener('mousedown', e=>{ if(e.target.closest && e.target.closest('#sel-pop')) e.preventDefault(); });   // 버튼을 눌러도 고른 글자가 풀리지 않게
+document.addEventListener('mouseup', e=>{ if(e.target.closest && e.target.closest('#sel-pop')) return; setTimeout(selPopShow, 10); });
+document.addEventListener('selectionchange', ()=>{ clearTimeout(selT); selT=setTimeout(()=>{ const s=getSelection(); if(!s || s.isCollapsed) selPopHide(); else if(matchMedia('(pointer:coarse)').matches) selPopShow(); }, 450); });
+function myqModalOpen(){
+  let m=$('#myq-modal'); if(!m){ m=document.createElement('div'); m.id='myq-modal'; m.className='modal'; document.body.appendChild(m); }
+  m.innerHTML=`<div class="modal-box" role="dialog" aria-label="문제 만들기">${myqCardHTML()}</div>`;
+  setTimeout(()=>{ const f=m.querySelector('.myq-form textarea'); if(f){ f.focus(); f.setSelectionRange(f.value.length, f.value.length); } }, 0);
+}
+function myqModalSync(){ const m=$('#myq-modal'); if(m && !myqEdit) m.remove(); }
+document.addEventListener('click', e=>{ if(e.target && e.target.id==='myq-modal'){ myqEdit=null; myqModalSync(); } });
+function selAct(act){
+  if(!selCtx) return; const sec=ALL_SECS.find(s=>s.id===selCtx.uid); if(!sec) return;
+  const {t, sen}=selCtx, base={...myqDefaults(act==='sel-cz'?'cz':'mc'), s:sec.subj, u:sec.id};
+  if(act==='sel-cz') myqEdit={...base, sent:sen.includes(t)?sen.replace(t, `[${t}]`):`${sen} [${t}]`};
+  else myqEdit={...base, q:`${sen.includes(t)?sen.replace(t,'(　　　)'):sen} — 빈칸에 들어갈 말로 옳은 것은?`, c:[t,'','',''], a:0};
+  selPopHide(); try{ getSelection().removeAllRanges(); }catch(e){} myqModalOpen();
+}
+
+/* ---- 6. 헷갈리는 개념 고르기: 본문·요약의 비교표에서 "이 설명은 어느 쪽?" 문제를 자동으로 만든다 ---- */
+const VS_COLTYPE=/^(구분|항목|비교|기준|요인|$)|오르면|커지면|변하면/;
+let VS_IDX=null, vsS=null, vsSubj='all';
+function vsBuild(){
+  if(VS_IDX) return VS_IDX; const out=[];
+  ALL_SECS.forEach(s=>{
+    const T=[...(s.tb||[]).map(t=>({cap:t.cap,h:t.h,r:t.r})), ...(BODY[s.id]||[]).filter(b=>b.tb).map(b=>({cap:b.cap2,h:b.h2,r:b.r2}))];
+    T.forEach((t,ti)=>{
+      const H=t.h.map(x=>stripTags(String(x)).trim()); if(H.length<3 || H.length>5) return;
+      const R=t.r.map(r=>r.map(x=>stripTags(String(x)).trim())); if(R.some(r=>r.length!==H.length)) return;
+      const key=s.id+'-'+ti, cap=stripTags(t.cap||'')||(VS_COLTYPE.test(H[0])?H.slice(1).join(' vs '):`${H[0]}별 ${H.slice(1).join('·')}`), items=[];
+      if(VS_COLTYPE.test(H[0])){            // 열이 비교 대상: "구분 / A / B"
+        const opts=H.slice(1);
+        R.forEach((r,ri)=>r.slice(1).forEach((c,j,cells)=>{ if(!c || c.length<1 || /^[-—–]$/.test(c) || cells.filter(x=>x===c).length>1 || opts.some(o=>o.length>=2 && c.includes(o))) return;
+          items.push({id:`${key}-${ri}-${j}`, u:s.id, subj:s.subj, cap, col:true, lead:r[0], text:c, opts, a:j, H, row:r}); }));
+      } else {                              // 행이 비교 대상: 첫 칸이 이름
+        const ents=R.map(r=>r[0]); if(R.length<3 || ents.some(e=>!e || e.length>26) || new Set(ents).size<ents.length) return;
+        R.forEach((r,ri)=>{ for(let j=1;j<H.length;j++){ const c=r[j]; if(!c || c.length<2 || /^[-—–]$/.test(c) || R.filter(x=>x[j]===c).length>1 || ents.some(e=>e.length>=2 && c.includes(e))) continue;
+          items.push({id:`${key}-${ri}-${j}`, u:s.id, subj:s.subj, cap, col:false, lead:H[j], text:c, ents, ri, H, row:r}); } });
+      }
+      if(items.length>=2) out.push({key, u:s.id, subj:s.subj, cap, H, items});
+    });
+  });
+  return (VS_IDX=out);
+}
+function vsPrep(it){   // 행 비교형은 풀 때마다 보기 4개를 새로 섞는다
+  if(it.col) return {...it};
+  const others=shuffleArr(it.ents.filter((e,k)=>k!==it.ri)).slice(0,3), opts=shuffleArr([it.ents[it.ri], ...others]);
+  return {...it, opts, a:opts.indexOf(it.ents[it.ri])};
+}
+function vsStart(items, title){ if(!items.length){ toast('풀 문제가 없습니다.', 2500); return; } vsS={title, items:items.map(vsPrep), idx:0, pick:null, res:{}}; qzView='vs'; qz=null; goTab('quiz', renderQuiz); }
+function vsHTML(){
+  if(vsS) return vsRunHTML();
+  const T=vsBuild(), list=T.filter(t=>vsSubj==='all'||t.subj===vsSubj), n=list.reduce((a,t)=>a+t.items.length,0), st=state.vs||{};
+  return `<div class="card stack"><div class="sec-head"><h2>헷갈리는 개념 고르기</h2><span class="small muted">비교표 ${T.length}개 · ${T.reduce((a,t)=>a+t.items.length,0)}문제</span></div>
+    <p class="small muted" style="margin:0">본문·요약의 비교표(DB형·DC형, 콜·풋, 적합성·적정성 등)에서 "이 설명은 어느 쪽?"을 자동으로 만듭니다. 시험의 바꿔치기 함정을 잡는 연습입니다.</p>
+    <div class="chips"><button class="chipbtn" data-act="vs-subj" data-s="all" aria-pressed="${vsSubj==='all'}">전 과목</button>${SUBJ.map(s=>`<button class="chipbtn" data-act="vs-subj" data-s="${s.id}" aria-pressed="${vsSubj===s.id}">${s.short}</button>`).join('')}</div>
+    <div class="row"><button class="btn pri" data-act="vs-mix" ${n?'':'disabled'}>섞어서 20문제</button><button class="btn" data-act="vs-wrong" ${Object.values(st).some(v=>v[0]>v[1])?'':'disabled'}>틀렸던 것만</button></div>
+    <div class="cl">${list.map(t=>{ const a=t.items.reduce((x,i)=>x+((st[i.id]||[0])[0]),0), c=t.items.reduce((x,i)=>x+((st[i.id]||[0,0])[1]),0);
+      return `<div class="cl-item" style="grid-template-columns:1fr auto"><div style="min-width:0"><div style="font-weight:600">${esc(t.cap)}</div><div class="small muted">${chip(t.subj)} ${esc((ALL_SECS.find(s=>s.id===t.u)||{}).title||'')} · ${t.items.length}문제${a?` · 정답률 ${Math.round(c/a*100)}%`:''}</div></div>
+        <button class="btn sm pri" data-act="vs-table" data-k="${t.key}">풀기</button></div>`; }).join('')||'<div class="empty">이 과목에는 비교표가 없습니다.</div>'}</div></div>`;
+}
+function vsRunHTML(){
+  const S=vsS, N=S.items.length;
+  if(S.idx>=N){ const ok=Object.values(S.res).filter(Boolean).length, wrong=S.items.filter(i=>S.res[i.id]===false);
+    return `<div class="card stack"><span class="eyebrow">헷갈리는 개념 고르기 · ${esc(S.title)} 결과</span>
+      <div class="verdict"><span class="big">${ok}<span class="muted" style="font-size:1rem"> / ${N}</span></span><span class="num" style="font-size:1.2rem">${Math.round(ok/N*100)}%</span></div>
+      <div class="row"><button class="btn pri" data-act="vs-retry" ${wrong.length?'':'disabled'}>틀린 ${wrong.length}문제 다시</button><button class="btn" data-act="vs-home">목록으로</button></div></div>
+      ${wrong.length?`<div class="card stack"><h2>틀린 문제</h2><div class="cl">${wrong.map(i=>`<div class="cl-item" style="grid-template-columns:1fr"><div><span class="small muted">${esc(i.cap)} · ${esc(i.lead)}</span><div>${esc(i.text)} → <b>${esc(i.opts[i.a])}</b></div></div></div>`).join('')}</div></div>`:''}`; }
+  const it=S.items[S.idx], u=ALL_SECS.find(s=>s.id===it.u), done=S.pick!=null;
+  return `<div class="card row between"><div class="stack" style="gap:2px"><span class="eyebrow">헷갈리는 개념 고르기 · ${esc(S.title)}</span><b class="num">${S.idx+1} / ${N}</b></div><button class="btn sm" data-act="vs-home">그만 풀기</button></div>
+    <div class="progress"><div style="width:${(S.idx+1)/N*100}%;background:var(--accent)"></div></div>
+    <div class="card stack">
+      <span class="small">${chip(it.subj)} <span class="muted">${esc(u?u.title:'')} · ${esc(it.cap)}</span></span>
+      <div class="vs-q"><span class="vs-lead">${esc(it.lead)}</span><div>${esc(it.text)}</div></div>
+      <div class="small muted">${it.col?'이 설명은 어느 쪽인가요?':'어느 것에 대한 설명인가요?'}</div>
+      <div class="vs-opts">${it.opts.map((o,k)=>{ let cls='choice'; if(done){ if(k===it.a) cls+=' ok'; else if(k===S.pick) cls+=' no'; }
+        return `<button class="${cls}" data-act="vs-pick" data-k="${k}" ${done?'disabled':''}>${MARK[k]} ${esc(o)}</button>`; }).join('')}</div>
+      ${done?`<div class="tip"><b style="color:${S.pick===it.a?'var(--ok)':'var(--bad)'}">${S.pick===it.a?'정답':'오답'}</b> · ${esc(it.opts[it.a])}</div>
+        <div class="tbl-wrap"><table><thead><tr>${it.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody><tr>${it.row.map(c=>`<td>${esc(c)}</td>`).join('')}</tr></tbody></table></div>
+        <div class="row between"><button class="lnk" data-act="book-go" data-u="${it.u}">본문에서 표 전체 보기</button><button class="btn pri" data-act="vs-next">다음 <span class="small" style="opacity:.8">Enter</span></button></div>`
+        :'<span class="small muted">키보드 1~4로 고를 수 있습니다</span>'}
+    </div>`;
+}
+function vsAct(act, a){
+  const T=vsBuild(), all=()=>T.flatMap(t=>t.items);
+  if(act==='vs-subj'){ vsSubj=a.dataset.s; renderQuiz(); return; }
+  if(act==='vs-mix'){ vsStart(shuffleArr(all().filter(i=>vsSubj==='all'||i.subj===vsSubj)).slice(0,20), vsSubj==='all'?'전 과목 섞어서':SUBJ_BY[vsSubj].short+' 섞어서'); return; }
+  if(act==='vs-table'){ const t=T.find(x=>x.key===a.dataset.k); if(t) vsStart(shuffleArr(t.items), t.cap); return; }
+  if(act==='vs-wrong'){ const st=state.vs||{}; vsStart(shuffleArr(all().filter(i=>st[i.id] && st[i.id][0]>st[i.id][1])).slice(0,30), '틀렸던 것만'); return; }
+  if(act==='vs-home'){ vsS=null; renderQuiz(); window.scrollTo({top:0}); return; }
+  if(act==='vs-retry'){ const w=vsS.items.filter(i=>vsS.res[i.id]===false); vsStart(shuffleArr(w), '틀린 문제 다시'); return; }
+  if(!vsS || vsS.idx>=vsS.items.length) return;
+  if(act==='vs-pick'){ if(vsS.pick!=null) return; const it=vsS.items[vsS.idx], k=+a.dataset.k, ok=k===it.a; vsS.pick=k; vsS.res[it.id]=ok;
+    state.vs=state.vs||{}; const s=(state.vs[it.id]||[0,0]).slice(); s[0]++; if(ok) s[1]++; state.vs[it.id]=s; save(); renderQuiz(); return; }
+  if(act==='vs-next'){ if(vsS.pick==null) return; vsS.idx++; vsS.pick=null; renderQuiz(); window.scrollTo({top:0}); return; }
+}
+document.addEventListener('keydown', e=>{
+  if(TAB!=='quiz' || qz || qzView!=='vs' || !vsS || vsS.idx>=vsS.items.length || e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
+  const t=e.target; if(t && t.matches && t.matches('input,textarea,select')) return;
+  if(/^[1-4]$/.test(e.key) && vsS.pick==null){ const b=document.querySelectorAll('#p-quiz [data-act="vs-pick"]')[+e.key-1]; if(b){ e.preventDefault(); b.click(); } }
+  else if(e.key==='Enter' && vsS.pick!=null && !(t && t.matches && t.matches('button'))){ e.preventDefault(); vsAct('vs-next', document.body); }
+});
+function feat3Act(act, a){
+  if(act==='rx-toggle'){ rxOn=!rxOn; try{ localStorage.setItem('afpk95-rx', rxOn?'1':'0'); }catch(e){} mkRefreshUI(); toast(rxOn?'틀린 문제의 관련 본문에 자동으로 형광펜을 칠합니다.':'오답 자동 형광펜을 껐습니다.', 2500); return true; }
+  if(act==='rx-clear'){ let n=0; Object.keys(state.marks).forEach(u=>{ const L=state.marks[u], k=L.filter(m=>!m.auto); n+=L.length-k.length; state.marks[u]=k; }); save(); mkApply(); mkRefreshUI(); toast(`자동으로 칠한 표시 ${n}개를 지웠습니다.`, 2500); return true; }
+  if(act==='note-print'){ runPrint(a.dataset.how, `AFPK 형광펜 노트 ${todayStr()}`, `<section class="pr-page"><div class="pr-title"><span class="eyebrow">제95회 AFPK · 형광펜 노트</span><h2>내가 칠한 형광펜 · 메모 · 빈칸</h2></div>${noteBodyHTML()}</section>`); return true; }
+  if(act==='mk-conv'){ mkConv=!mkConv; mkRefreshUI(); return true; }
+  if(act==='mk-conv-no'){ mkConv=null; mkRefreshUI(); return true; }
+  if(act==='mk-conv-ok'){ mkConvDo(); return true; }
+  if(act==='sel-cz'||act==='sel-mc'){ selAct(act); return true; }
+  if(act==='qz-subj-go'){ qzSubj=a.dataset.s; qzView='study'; qz=null; vsS=null; try{ localStorage.setItem('afpk95-qzview','study'); }catch(_){} goTab('quiz', renderQuiz); return true; }
+  if(act.startsWith('vs-')){ vsAct(act, a); return true; }
+  return false;
+}
+
 /* ===================== 기본서 (처음부터 끝까지 읽기) ===================== */
 const BOOK_ORDER = SUBJ.map(s=>s.id);   /* 시험 과목 순서: 모듈1 → 모듈2 */
 const BOOK_FS = {s:'0.95rem', m:'1.05rem', l:'1.18rem'};
@@ -6834,6 +7078,7 @@ function renderBook(){
       <div class="chips" role="tablist" aria-label="편 선택">
         <button class="chipbtn" data-act="book-part" data-p="guide" aria-pressed="${bookPart==='guide'}">들어가며</button>
         <button class="chipbtn" data-act="book-part" data-p="abbr" aria-pressed="${bookPart==='abbr'}">약어 사전</button>
+        <button class="chipbtn" data-act="book-part" data-p="note" aria-pressed="${bookPart==='note'}">형광펜 노트</button>
         <button class="chipbtn" data-act="book-part" data-p="num" aria-pressed="${bookPart==='num'}">숫자 비교표</button>
         <button class="chipbtn" data-act="book-part" data-p="eve" aria-pressed="${bookPart==='eve'}">시험 전날 요약</button>
         ${BOOK_ORDER.map(p=>{ const us=SUMMARY[p], rd=us.filter(u=>state.read[u.id]).length;
@@ -6846,7 +7091,7 @@ function renderBook(){
       </div>`:''}
       <details class="toc"><summary class="btn">전체 목차 펼치기</summary><ol class="toc-list">${toc}</ol></details>
     </div>
-    <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():bookPart==='num'?numHTML():bookPart==='eve'?eveHTML():partHTML(bookPart, bookUnit)}</article>`;
+    <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():bookPart==='note'?noteHTML():bookPart==='num'?numHTML():bookPart==='eve'?eveHTML():partHTML(bookPart, bookUnit)}</article>`;
   mkApply($('#book-art')); mkRefreshUI();
   observeBook();
   if(bookTarget){ const t=document.getElementById('bk-'+bookTarget); bookTarget=null; if(t) t.scrollIntoView({block:'start'}); }
@@ -8496,7 +8741,7 @@ q519:'금융소득이 많을수록 ISA 혜택이 크다고 생각하기 쉽지�
 const MARK=['①','②','③','④'];
 const LS_QMOCK='afpk95-qmock';
 let qz=null, qzSubj='intro', qzConfirm=null, qzView='exam', qzResView='wrong', scSubj='intro', scMode='unit', omrOpen=false;
-try{ const v=localStorage.getItem('afpk95-qzview'); if(['exam','study','sum','trend','calc'].includes(v)) qzView=v; }catch(e){}
+try{ const v=localStorage.getItem('afpk95-qzview'); if(['exam','study','sum','trend','calc','vs'].includes(v)) qzView=v; }catch(e){}
 let trSubj='intro';
 const isPaperMode=m=>m==='mock'||m==='paper';
 function savedMock(){ try{ const m=JSON.parse(localStorage.getItem(LS_QMOCK)||'null'); return (m&&isPaperMode(m.mode)&&!m.done&&Array.isArray(m.items)&&m.items.every(x=>QB_BY[x.id]))?m:null; }catch(e){ return null; } }
@@ -8517,6 +8762,7 @@ function recordQ(id, ok){
   const r=state.sr[id], t=todayStr();
   if(!ok) state.sr[id]={step:0, due:inDays(SR_INT[0])};
   else if(r && r.due<=t){ const st=r.step+1; if(st>=SR_INT.length) delete state.sr[id]; else state.sr[id]={step:st, due:inDays(SR_INT[st])}; }
+  rxApply(id, ok);
 }
 function dueQIds(){
   const t=todayStr(), ids=new Set();
@@ -8678,7 +8924,9 @@ function quizHomeHTML(){
       <button data-act="qz-view" data-v="sum" aria-pressed="${qzView==='sum'}">요약카드</button>
       <button data-act="qz-view" data-v="trend" aria-pressed="${qzView==='trend'}">출제 경향</button>
       <button data-act="qz-view" data-v="calc" aria-pressed="${qzView==='calc'}">계산 연습</button>
+      <button data-act="qz-view" data-v="vs" aria-pressed="${qzView==='vs'}">개념 고르기</button>
     </div>`;
+  if(qzView==='vs') return tiles + vsHTML();
   if(qzView==='calc') return tiles + myqCardHTML() + calcHTML();
   if(qzView==='sum') return tiles + myqCardHTML() + sumCardsHTML();
   if(qzView==='trend') return tiles + myqCardHTML() + trendHTML();
@@ -8767,7 +9015,7 @@ function quizRunHTML(){
         ${mock?'':`<button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${u?esc(u.t):''}">본문 보기</button>`}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${it.o.map((orig,k)=>choiceHTML(it,q,k,orig,chosen,shown)).join('')}</div>
-      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>${chosen!==q.a?whyChipsHTML(q.id):''}${qMemoHTML(q.id)}`:''}
+      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>${chosen!==q.a?whyChipsHTML(q.id)+rxNoteHTML(q):''}${qMemoHTML(q.id)}`:''}
       <div class="row between">
         <button class="btn" data-act="qz-prev" ${qz.idx<=lo?'disabled':''}>이전</button>
         ${atEnd ? (mock?'':`<button class="btn pri" data-act="qz-finish">결과 보기</button>`) : `<button class="btn ${shown||mock?'pri':''}" data-act="qz-next">다음</button>`}
@@ -9461,7 +9709,7 @@ function paperResultHTML(){
     return abbrUnit(`<div class="expl"><div><span class="lab" style="color:${r.ok?'var(--ok)':'var(--bad)'}">${r.ok?'정답':r.ch===undefined?'무응답':'오답'}</span> · 정답 ${MARK[r.it.o.indexOf(r.q.a)]}${r.ok||r.ch===undefined?'':` · 내 답 ${MARK[r.it.o.indexOf(r.ch)]}`}</div>
       <div>${esc(r.q.e)}</div>${note[1]?`<div><span class="lab" style="color:var(--warn)">함정</span> · ${esc(note[1])}</div>`:''}
       <div class="small"><span class="lab">필요한 개념</span> · ${esc(note[0]||'')} <span class="muted">(${u?u.title:''})</span> · <button class="lnk" data-act="sum-go" data-subj="${r.q.s}" data-topic="${u?esc(u.t):''}">본문</button>${qz.sec&&qz.sec[r.q.id]!==undefined?` · <span class="muted">소요 약 ${Math.round(qz.sec[r.q.id])}초</span>`:''}</div>
-      ${r.ok?'':whyChipsHTML(r.q.id)}</div>`) + qMemoHTML(r.q.id); };
+      ${r.ok?'':whyChipsHTML(r.q.id)}</div>`) + (r.ok?'':rxNoteHTML(r.q)) + qMemoHTML(r.q.id); };
   const expl = show.length ? `<div class="sheet" style="margin-top:4px">${sheetPagesHTML(show.map(r=>r.i), i=>sheetQHTML(i, explFn(i), true))}</div>` : '<div class="empty">틀린 문제가 없습니다.</div>';
   // 오답 요약카드
   const wrongUnits={}; res.filter(r=>!r.ok).forEach(r=>{ (wrongUnits[r.q.u]=wrongUnits[r.q.u]||[]).push(r); });
