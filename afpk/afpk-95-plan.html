@@ -456,6 +456,28 @@ mark.mk-ans{background:var(--uhl);color:inherit;padding:0 3px;border-radius:3px;
 .toc-u{font-weight:700;padding:8px 8px 4px;margin-top:4px} .toc-h{padding:5px 8px 5px 18px;font-size:.88rem;color:var(--muted)}
 .toc-u:hover,.toc-h:hover{background:var(--line2)} .toc-u.cur,.toc-h.cur{background:var(--accent-soft);color:var(--accent);font-weight:700}
 @media print{#toc-fab,#toc-panel,.mk-notes-box,.qmemo{display:none!important}}
+#fl-tm.wide{width:auto;padding:0 12px;border-radius:999px;font-size:.92rem}
+#fl-tm[data-st="on"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)} #fl-tm[data-st="break"]{background:var(--ok);color:#fff;border-color:var(--ok)}
+.fl-pop{position:fixed;right:12px;z-index:22;width:min(340px,calc(100vw - 24px));max-height:calc(100vh - 120px);overflow:auto;display:flex;flex-direction:column;gap:10px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.fl-pop.wide{width:min(520px,calc(100vw - 24px))}
+.tm-clock{font-size:2.6rem;font-weight:800;text-align:center;letter-spacing:.02em}
+.tm-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;height:130px;align-items:end}
+.tm-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.tm-bar{width:70%;min-height:2px;background:var(--accent);border-radius:4px 4px 0 0}
+.why-row{display:grid;grid-template-columns:118px 1fr 28px auto;gap:8px;align-items:center}
+.why-row .track{height:8px;background:var(--line2);border-radius:4px;overflow:hidden} .why-row .fill{height:100%;background:var(--accent)}
+#qz-pace{min-width:3.5em;text-align:right} #qz-pace.low{color:var(--warn)} #qz-pace.over{color:var(--bad)}
+.num-g{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.num-k{display:flex;align-items:baseline;gap:10px;margin-bottom:4px} .num-k b{font-size:1.15rem;color:var(--accent)}
+.num-l{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.sr-sec summary{cursor:pointer} .sr-l{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.eve-s h3{margin:18px 0 6px} .eve-s ul,.eve-s ol{padding-left:20px;display:flex;flex-direction:column;gap:5px;margin:0}
+kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 6px;background:var(--paper);white-space:nowrap}
+:root[data-fs="s"]{font-size:14.7px} :root[data-fs="s"] body{font-size:13.8px}
+:root[data-fs="l"]{font-size:17.6px} :root[data-fs="l"] body{font-size:16.5px}
+:root[data-fs="xl"]{font-size:19.5px} :root[data-fs="xl"] body{font-size:18.3px}
+:root[data-lh="w"] body{line-height:1.9} :root[data-lh="w"] .body-text p,:root[data-lh="w"] .body-text li,:root[data-lh="w"] .sum-sec li,:root[data-lh="w"] .cz-sent{line-height:2.05}
+@media print{.fl-pop{display:none!important}}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -5213,7 +5235,7 @@ function defaultState(){
   return {v:1, settings:{start: t>'2026-10-12'?t:'2026-10-12', exam:EXAM.date, wd:2, we:5,
     prof:Object.fromEntries(SUBJ.map(s=>[s.id,s.prof]))},
     checklist:{}, done:{}, mocks:[], cards:{known:{}, custom:[], sr:{}}, read:{}, qs:{}, wrong:{}, studied:{}, bookmark:null,
-    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, updated:''};
+    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, tm:{}, updated:''};
 }
 function normalize(d){
   const s=defaultState(); if(!d||typeof d!=='object') return s;
@@ -5230,6 +5252,7 @@ function normalize(d){
     wrong:{...(d.wrong||{})},
     studied:{...(d.studied||{})},
     bookmark:typeof d.bookmark==='string'?d.bookmark:null,
+    tm:Object.fromEntries(Object.entries(d.tm||{}).filter(([k,v])=>v&&typeof v==='object').map(([k,v])=>[k, Object.fromEntries(Object.entries(v).map(([s,m])=>[s, m|0]))])),
     qmemo:Object.fromEntries(Object.entries(d.qmemo||{}).filter(([k,v])=>typeof v==='string'&&v)),
     rv:d.rv&&typeof d.rv.d==='string'&&Array.isArray(d.rv.s)?{d:d.rv.d, s:d.rv.s.slice()}:{d:'',s:[]},
     marks:Object.fromEntries(Object.entries(d.marks||{}).map(([k,v])=>[k, Array.isArray(v)?v.filter(m=>m&&typeof m.t==='string'&&m.t).map(m=>({...m, ok:m.ok|0, ng:m.ng|0})):[]])),
@@ -5443,6 +5466,7 @@ function renderToday(){
     ${resumeCardHTML()}
     ${todayCard}
     ${reviewCardHTML()}
+    ${tmCardHTML()}
     ${mockCard}
     <div class="card stack"><div class="sec-head"><h2>시험 준비 체크리스트</h2><span class="muted small num">${clDone}/${CHECKLIST.length}</span></div>
       <div class="cl">${cl}</div>
@@ -5499,6 +5523,7 @@ function renderPlanOut(){
       <p class="muted small">개론의 화폐 시간가치(TVM)를 먼저 끝내야 투자·은퇴 계산 문제가 풀립니다. 그래서 개론을 맨 앞에 두었습니다.</p>
     </div>
     <div class="card"><div class="sec-head" style="margin-bottom:4px"><h2>일별 일정</h2><span class="muted small">빨간 날짜는 주말·공휴일</span></div>${wk}</div>`;
+  el.insertAdjacentHTML('beforeend', backupCardHTML());
 }
 
 /* ===================== 점수 시뮬레이터 ===================== */
@@ -5836,12 +5861,14 @@ function renderSummary(){
         <button class="chipbtn" data-act="sum-mode" data-m="sum" aria-pressed="${sumMode==='sum'}">요약만 (복습용 · 도식 포함)</button>
         <button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button>
         <button class="btn sm" data-act="book-part" data-p="abbr">약어 사전</button>
+        <button class="btn sm" data-act="book-part" data-p="num">숫자 비교표</button>
+        <button class="btn sm" data-act="book-part" data-p="eve">시험 전날 요약</button>
         <button class="btn sm" data-act="pr-open" data-k="sum" aria-expanded="false">🖨 인쇄</button>
       </div>
       ${printPanelHTML('sum')}
       <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상)</span>
       ${mkToolsHTML()}
-      <input type="search" id="sum-q" placeholder="전체 검색: 예) 유류분, 듀레이션, 고지의무" value="${esc(sumQ)}" aria-label="요약본 검색">
+      <input type="search" id="sum-q" placeholder="전체 검색 (본문·요약·문제·카드·메모): 예) 유류분, 듀레이션" value="${esc(sumQ)}" aria-label="요약본 검색">
       <div class="chips">${STUDY_ORDER.map(id=>{const n=ALL_SECS.filter(s=>s.subj===id), r=readCount(n);
         return `<button class="chipbtn" data-act="sum-subj" data-s="${id}" aria-pressed="${!sumQ&&sumSubj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${r}/${n.length}</span></button>`;}).join('')}</div>
     </div>
@@ -5852,8 +5879,8 @@ function renderSumList(){
   const q=sumQ.trim().toLowerCase(); const el=$('#sum-list'); if(!el) return;
   if(q){
     const hits=ALL_SECS.filter(s=>SEC_TEXT[s.id].includes(q));
-    el.innerHTML = `<p class="small muted">"${esc(sumQ.trim())}" 검색 결과 <b class="num">${hits.length}</b>개 단원</p>` +
-      (hits.length?hits.map(s=>secHTML(s,true)).join(''):'<div class="empty">찾는 단어가 요약본에 없습니다. 다른 표현으로 검색해 보세요.</div>');
+    el.innerHTML = `<p class="small muted">"${esc(sumQ.trim())}" 검색 결과 · 본문·요약 <b class="num">${hits.length}</b>개 단원 (예상문제·암기카드·내 메모는 맨 아래)</p>` +
+      (hits.length?hits.map(s=>secHTML(s,true)).join(''):'<div class="empty">찾는 단어가 본문·요약에 없습니다.</div>') + searchMoreHTML(q);
   } else {
     const s=SUBJ_BY[sumSubj];
     el.innerHTML = `<div class="row between"><h2>${s.name}</h2><span class="small muted">${s.q}문항 · ${failTxt(s)} · 목표 ${s.target}개</span></div>` +
@@ -5889,13 +5916,13 @@ function mkRefreshUI(){
   let f=$('#mk-float');
   if(!f){ f=document.createElement('div'); f.id='mk-float'; f.setAttribute('role','group'); f.setAttribute('aria-label','빠른 도구'); document.body.appendChild(f); }
   const dark = themePref==='auto' ? matchMedia('(prefers-color-scheme: dark)').matches : themePref==='dark';
-  const nav=`<div class="fl-row"><button class="fl-ic" data-act="fl-theme" title="${dark?'라이트 모드로':'다크 모드로'}" aria-label="${dark?'라이트 모드로 바꾸기':'다크 모드로 바꾸기'}">${dark?'☀':'☾'}</button><button class="fl-ic" data-act="fl-top" title="맨 위로" aria-label="맨 위로">↑</button><button class="fl-ic" data-act="fl-bottom" title="맨 아래로" aria-label="맨 아래로">↓</button></div>`;
+  const nav=`<div class="fl-row"><button class="fl-ic" data-act="fl-theme" title="${dark?'라이트 모드로':'다크 모드로'}" aria-label="${dark?'라이트 모드로 바꾸기':'다크 모드로 바꾸기'}">${dark?'☀':'☾'}</button><button class="fl-ic" id="fl-tm" data-act="fl-tm" title="집중 타이머" aria-label="집중 타이머">⏱</button><button class="fl-ic" data-act="fl-fs" title="글자 크기·줄간격" aria-label="글자 크기·줄간격" style="font-size:1rem">가</button><button class="fl-ic" data-act="fl-top" title="맨 위로" aria-label="맨 위로">↑</button><button class="fl-ic" data-act="fl-bottom" title="맨 아래로" aria-label="맨 아래로">↓</button></div>`;
   if(TAB==='summary'||TAB==='book'){
     const st=k=>mkMode===k?'on':mkMode===k+'-x'?'x':'off';
     const lab={nt:{off:'📝 메모',on:'📝 메모 달기',x:''}, hl:{off:'🖍 형광펜',on:'🖍 칠하기',x:'🧽 형광펜 지우기'}, cz:{off:'▭ 빈칸',on:'▭ 빈칸 만들기',x:'🧽 빈칸 제거'}};
     f.innerHTML=['nt','hl','cz'].map(k=>`<button class="mk-fb" data-act="mk-cycle" data-k="${k}" data-st="${st(k)}" aria-pressed="${st(k)!=='off'}" title="${k==='nt'?'누를 때마다 메모 달기 ↔ 끄기':`누를 때마다 ${k==='hl'?'칠하기 → 지우기':'만들기 → 제거'} → 끄기`}">${lab[k][st(k)]}</button>`).join('')+nav;
   } else f.innerHTML=nav;
-  tocBuild();
+  tocBuild(); tmTick(); if(flPop) flPopRender();
 }
 /* 단원 영역의 글자 노드 (그림·버튼 안 글자는 제외) */
 function mkNodes(area){
@@ -6289,6 +6316,301 @@ function mkNoteAct(act, a){
   return false;
 }
 
+/* ===================== 편의 기능 2: 집중 타이머 · 문항당 시간 · 틀린 이유 · 숫자 비교표 · 글자 크기 · 단축키 · 전체 검색 · 백업 · 시험 전날 요약 ===================== */
+let flPop=null;   // 플로팅 위에 뜨는 작은 창: 'tm' | 'fs' | 'keys'
+function flPopHTML(){
+  if(flPop==='tm') return tmPanelHTML();
+  if(flPop==='fs') return fsPanelHTML();
+  if(flPop==='keys') return keysHTML();
+  return '';
+}
+function flPopRender(){
+  let p=$('#fl-pop');
+  if(!flPop){ if(p) p.remove(); return; }
+  if(!p){ p=document.createElement('div'); p.id='fl-pop'; p.setAttribute('role','dialog'); document.body.appendChild(p); }
+  p.className='fl-pop'+(flPop==='keys'?' wide':''); p.innerHTML=flPopHTML();
+  const fl=$('#mk-float'); p.style.bottom=`calc(${(fl?fl.getBoundingClientRect().height:0)+24}px + env(safe-area-inset-bottom,0px))`;
+}
+document.addEventListener('click', e=>{ if(flPop && e.target.closest && !e.target.closest('#fl-pop,#mk-float')){ flPop=null; flPopRender(); } });
+
+/* ---- 6. 집중 타이머 (뽀모도로): 공부 시간은 과목별로 하루 단위로 쌓는다 (동기화) ---- */
+const LS_TM='afpk95-timer';
+const TM_SET={'25':[25,5], '50':[50,10]};
+let tm={len:'25', phase:'study', running:false, endAt:0, remain:25*60000, subj:'', startAt:0};
+try{ const o=JSON.parse(localStorage.getItem(LS_TM)||'null'); if(o && TM_SET[o.len]) tm={...tm, ...o}; }catch(e){}
+function tmSave(){ try{ localStorage.setItem(LS_TM, JSON.stringify(tm)); }catch(e){} }
+function tmLeft(){ return tm.running ? Math.max(0, tm.endAt-Date.now()) : tm.remain; }
+function tmFmt(ms){ const s=Math.ceil(ms/1000); return `${Math.floor(s/60)}:${pad(s%60)}`; }
+function tmGuessSubj(){
+  if(TAB==='summary') return sumSubj;
+  if(TAB==='book' && SUBJ_BY[bookPart]) return bookPart;
+  if(TAB==='quiz' && qz && qz.items && qz.items[qz.idx]){ const q=QB_BY[qz.items[qz.idx].id]; if(q) return q.s; }
+  return tm.subj||'';
+}
+function tmAdd(ms, subj){
+  const min=Math.round(ms/60000); if(min<1) return 0;
+  const d=todayStr(), k=subj||'etc'; state.tm=state.tm||{}; state.tm[d]={...(state.tm[d]||{})}; state.tm[d][k]=(state.tm[d][k]||0)+min; save(); return min;
+}
+function tmStudied(){ return tm.phase==='study' && tm.startAt ? Date.now()-tm.startAt : 0; }
+function tmStart(){ if(tm.running) return; if(!tm.subj) tm.subj=tmGuessSubj(); tm.running=true; tm.endAt=Date.now()+tm.remain; if(tm.phase==='study') tm.startAt=Date.now(); tmSave(); tmTick(); }
+function tmPause(){ if(!tm.running) return; tm.remain=Math.max(0,tm.endAt-Date.now()); tm.running=false; if(tm.phase==='study'){ tmAdd(tmStudied(), tm.subj); tm.startAt=0; } tmSave(); tmTick(); }
+function tmReset(){ if(tm.running && tm.phase==='study') tmAdd(tmStudied(), tm.subj); tm.running=false; tm.phase='study'; tm.remain=TM_SET[tm.len][0]*60000; tm.startAt=0; tmSave(); tmTick(); }
+function tmBeep(){ try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const c=new C(); [0,0.35,0.7].forEach(t=>{ const o=c.createOscillator(), g=c.createGain(); o.frequency.value=880; g.gain.setValueAtTime(0.15,c.currentTime+t); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+t+0.25); o.connect(g); g.connect(c.destination); o.start(c.currentTime+t); o.stop(c.currentTime+t+0.3); }); }catch(e){} try{ navigator.vibrate && navigator.vibrate([200,100,200]); }catch(e){} }
+function tmFinish(){
+  const [st,br]=TM_SET[tm.len];
+  if(tm.phase==='study'){ const m=tmAdd(st*60000, tm.subj); tm.phase='break'; tm.remain=br*60000; tm.endAt=Date.now()+tm.remain; tm.startAt=0; tm.running=true;
+    toast(`공부 ${m}분 기록! ${br}분 쉬세요.`, 6000); }
+  else { tm.phase='study'; tm.remain=st*60000; tm.running=false; tm.startAt=0; toast('휴식 끝. ⏱을 눌러 다음 공부를 시작하세요.', 6000); }
+  tmBeep(); tmSave();
+}
+function tmTick(){
+  if(tm.running && Date.now()>=tm.endAt) tmFinish();
+  const b=$('#fl-tm'); if(b){ b.textContent=tm.running||tm.remain<TM_SET[tm.len][0]*60000||tm.phase==='break' ? `${tm.phase==='break'?'☕':'⏱'} ${tmFmt(tmLeft())}` : '⏱'; b.dataset.st=tm.running?(tm.phase==='break'?'break':'on'):'off'; b.classList.toggle('wide', b.textContent.length>2); }
+  if(flPop==='tm'){ const t=$('#tm-clock'); if(t) t.textContent=tmFmt(tmLeft()); }
+}
+setInterval(tmTick, 1000);
+function tmDayMin(d){ return Object.values((state.tm||{})[d]||{}).reduce((a,b)=>a+b,0); }
+function tmPanelHTML(){
+  const [st,br]=TM_SET[tm.len], today=(state.tm||{})[todayStr()]||{}, tot=tmDayMin(todayStr());
+  const subj=tm.subj||tmGuessSubj();
+  return `<div class="row between"><b>${tm.phase==='break'?'☕ 휴식':'⏱ 집중 공부'}</b><button class="btn sm" data-act="fl-close" aria-label="닫기">✕</button></div>
+    <div class="tm-clock num" id="tm-clock">${tmFmt(tmLeft())}</div>
+    <div class="row" style="justify-content:center">${tm.running?`<button class="btn pri" data-act="tm-pause">일시정지</button>`:`<button class="btn pri" data-act="tm-start">${tm.phase==='break'?'휴식 시작':'시작'}</button>`}<button class="btn" data-act="tm-reset">처음으로</button>${tm.phase==='break'?'<button class="btn" data-act="tm-skip">휴식 건너뛰기</button>':''}</div>
+    <div class="chips" role="group" aria-label="시간 설정">${Object.entries(TM_SET).map(([k,[a,b]])=>`<button class="chipbtn" data-act="tm-len" data-v="${k}" aria-pressed="${tm.len===k}">${a}분 공부 / ${b}분 휴식</button>`).join('')}</div>
+    <div class="stack" style="gap:4px"><span class="small muted">기록할 과목</span><div class="chips">${SUBJ.map(s=>`<button class="chipbtn" data-act="tm-subj" data-s="${s.id}" aria-pressed="${subj===s.id}">${s.short}</button>`).join('')}<button class="chipbtn" data-act="tm-subj" data-s="etc" aria-pressed="${subj==='etc'||!subj}">기타</button></div></div>
+    <div class="small">오늘 공부 <b class="num">${fmtMin(tot)}</b>${tot?` · ${Object.entries(today).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k==='etc'?'기타':SUBJ_BY[k]?SUBJ_BY[k].short:k} ${v}분`).join(' · ')}`:''}</div>
+    <span class="small muted">공부가 끝나면 소리와 진동으로 알려 줍니다. 일시정지·처음으로를 눌러도 그때까지 공부한 시간은 기록됩니다.</span>`;
+}
+function fmtMin(m){ return m>=60 ? `${Math.floor(m/60)}시간 ${m%60?m%60+'분':''}`.trim() : `${m}분`; }
+function tmCardHTML(){
+  const days=[...Array(7)].map((_,i)=>ymd(addDays(new Date(), i-6))), mins=days.map(tmDayMin), max=Math.max(60,...mins), week=mins.reduce((a,b)=>a+b,0);
+  const bySub={}; days.forEach(d=>Object.entries((state.tm||{})[d]||{}).forEach(([k,v])=>bySub[k]=(bySub[k]||0)+v));
+  const subRows=Object.entries(bySub).sort((a,b)=>b[1]-a[1]), smax=Math.max(1,...subRows.map(x=>x[1]));
+  return `<div class="card stack"><div class="sec-head"><h2>공부 시간</h2><button class="btn sm" data-act="tm-open">⏱ 타이머 열기</button></div>
+    <div class="tiles"><div class="tile"><div class="k">오늘</div><div class="v">${fmtMin(mins[6])}</div></div><div class="tile"><div class="k">최근 7일</div><div class="v">${fmtMin(week)}</div></div><div class="tile"><div class="k">하루 평균</div><div class="v">${fmtMin(Math.round(week/7))}</div></div></div>
+    ${week?`<div class="tm-week" role="img" aria-label="최근 7일 공부 시간">${days.map((d,i)=>`<div class="tm-col"><span class="small num">${mins[i]?mins[i]:''}</span><div class="tm-bar" style="height:${Math.round(mins[i]/max*100)}%"></div><span class="small muted">${d===todayStr()?'오늘':fmt(d).replace(/\(.\)/,'')}</span></div>`).join('')}</div>
+      <div class="stack" style="gap:4px">${subRows.map(([k,v])=>`<div class="bar"><span class="small">${k==='etc'?'기타':SUBJ_BY[k]?SUBJ_BY[k].short:k}</span><div class="track"><div class="fill" style="width:${v/smax*100}%"></div></div><span class="small num">${v}분</span></div>`).join('')}</div>`
+      :'<p class="small muted" style="margin:0">오른쪽 아래 ⏱ 버튼으로 25분 집중 타이머를 켜면 과목별 공부 시간이 여기에 쌓입니다.</p>'}</div>`;
+}
+function tmAct(act, a){
+  if(act==='tm-open'){ flPop='tm'; flPopRender(); return; }
+  if(act==='tm-start') tmStart(); else if(act==='tm-pause') tmPause(); else if(act==='tm-reset') tmReset();
+  else if(act==='tm-skip'){ tm.phase='study'; tm.remain=TM_SET[tm.len][0]*60000; tm.running=false; tmSave(); }
+  else if(act==='tm-len'){ if(tm.running && tm.phase==='study') tmAdd(tmStudied(), tm.subj); tm.len=a.dataset.v; tm.phase='study'; tm.running=false; tm.startAt=0; tm.remain=TM_SET[tm.len][0]*60000; tmSave(); }
+  else if(act==='tm-subj'){ if(tm.running && tm.phase==='study'){ tmAdd(tmStudied(), tm.subj); tm.startAt=Date.now(); } tm.subj=a.dataset.s; tmSave(); }
+  flPopRender(); tmTick(); if(TAB==='today') renderToday();
+}
+
+/* ---- 7. 문항당 제한시간 (실제 시험 170분 ÷ 150문항 ≈ 68초) ---- */
+const PACE_SEC=68;
+let paceOn=false; try{ paceOn=localStorage.getItem('afpk95-pace')==='1'; }catch(e){}
+function paceHTML(it, shown){
+  if(!paceOn) return `<button class="chipbtn" data-act="qz-pace" aria-pressed="false" title="실제 시험 평균 속도(170분 ÷ 150문항)로 연습">⏱ 문항당 ${PACE_SEC}초</button>`;
+  if(qz.ptIdx!==qz.idx){ qz.ptIdx=qz.idx; qz.pt=Date.now(); }
+  const took=shown && qz.ptime && qz.ptime[it.id]!=null ? qz.ptime[it.id] : null;
+  if(shown) return `<button class="chipbtn" data-act="qz-pace" aria-pressed="true">⏱ 시간 연습 켜짐</button>${took!=null?`<b class="num" id="qz-pace" data-done="1" style="${took>PACE_SEC?'color:var(--bad)':''}">${took}초 걸림${took>PACE_SEC?' (초과)':''}</b>`:''}`;
+  const tx=paceTxt();
+  return `<button class="chipbtn" data-act="qz-pace" aria-pressed="true">⏱ 시간 연습 켜짐</button><b class="num pace${tx.startsWith('시간')?' over':''}" id="qz-pace" data-done="0">${tx}</b>`;
+}
+function paceTxt(){ const s=PACE_SEC-Math.floor((Date.now()-(qz.pt||Date.now()))/1000); return s>=0?`${s}초`:`시간 초과 +${-s}초`; }
+setInterval(()=>{ const el=document.getElementById('qz-pace'); if(!el || !qz || el.dataset.done==='1') return; el.textContent=paceTxt(); el.classList.toggle('over', el.textContent.startsWith('시간')); el.classList.toggle('low', /^([0-9]|1[0-5])초/.test(el.textContent)); }, 500);
+function paceRecord(id){ if(!paceOn || !qz || qz.ptIdx!==qz.idx) return; const sec=Math.round((Date.now()-qz.pt)/1000); qz.ptime=qz.ptime||{}; if(qz.ptime[id]==null) qz.ptime[id]=sec; }
+function paceResultHTML(){
+  const t=qz && qz.ptime; if(!t || !Object.keys(t).length) return '';
+  const v=Object.values(t), over=v.filter(x=>x>PACE_SEC).length, avg=Math.round(v.reduce((a,b)=>a+b,0)/v.length);
+  return `<p class="small" style="margin:0">⏱ 시간 연습 · 평균 <b class="num">${avg}초</b> (목표 ${PACE_SEC}초) · 시간 초과 <b class="num" style="${over?'color:var(--bad)':''}">${over}</b>/${v.length}문항</p>`;
+}
+
+/* ---- 8. 틀린 이유 리포트 ---- */
+function whyReportHTML(){
+  const ids=Object.keys(state.why).filter(id=>QB_BY[id]); if(!ids.length) return '';
+  const c={}; ids.forEach(id=>{ const w=state.why[id]; (c[w]=c[w]||[]).push(id); });
+  const max=Math.max(...Object.values(c).map(x=>x.length)), top=Object.entries(c).sort((a,b)=>b[1].length-a[1].length)[0][0];
+  return `<div class="stack" style="gap:6px"><span class="small" style="font-weight:600">틀린 이유 통계 <span class="muted" style="font-weight:400">· ${ids.length}문항에 이유를 골랐습니다</span></span>
+    ${WHY.filter(([k])=>c[k]).map(([k,l])=>`<div class="why-row"><span class="small">${l}</span><div class="track"><div class="fill" style="width:${c[k].length/max*100}%;${k===top?'background:var(--bad)':''}"></div></div><b class="small num">${c[k].length}</b><button class="btn sm" data-act="why-retry" data-w="${k}">다시 풀기</button></div>`).join('')}
+    <span class="small muted">가장 많은 이유는 “${WHY.find(w=>w[0]===top)[1]}”입니다. ${WHY_TIP[top]||''}</span></div>`;
+}
+
+/* ---- 9. 헷갈리는 숫자 비교표: 본문·요약의 기간·비율·금액·나이를 모아 같은 숫자끼리 묶는다 ---- */
+const NUM_KIND={period:'기간', rate:'비율·세율', money:'금액', age:'나이'};
+const NUM_RE={
+  period:/(\d+(?:\.\d+)?)\s*(개월|주|일|년)(?![가-힣]*도\b)/g,
+  rate:/(\d+(?:\.\d+)?)\s*%/g,
+  money:/(\d[\d,]*(?:\.\d+)?)\s*(조|억|천만|백만|만)?\s*원/g,
+  age:/(?:만\s*)?(\d{1,3})\s*세(?![가-힣])/g,
+};
+let NUM_IDX=null, numF={k:'period', multi:true, s:'all'};
+function numVal(k, m){
+  if(k==='money'){ const n=parseFloat(m[1].replace(/,/g,'')), u={조:1e12,억:1e8,천만:1e7,백만:1e6,만:1e4}[m[2]]||1; return n*u; }
+  if(k==='period'){ const n=parseFloat(m[1]); return n*({일:1,주:7,개월:30,년:365}[m[2]]); }
+  return parseFloat(m[1]);
+}
+function numIndex(){
+  if(NUM_IDX) return NUM_IDX; const G={period:{}, rate:{}, money:{}, age:{}};
+  ALL_SECS.forEach(s=>{
+    const src=[...(s.p||[]), ...(s.f||[]), s.x||'', ...(s.tb||[]).flatMap(t=>t.r.map(r=>t.h.map((h,i)=>`${stripTags(h)} ${r[i]}`).join(' · '))), ...bodyPlain(s.id)];
+    const seen=new Set();
+    src.forEach(raw=>{ String(raw).replace(/<[^>]+>/g,'').split(/(?<=[.?!])\s+|\n/).forEach(sen=>{
+      sen=sen.trim(); if(sen.length<6 || seen.has(sen)) return; seen.add(sen);
+      Object.entries(NUM_RE).forEach(([k,re])=>{ re.lastIndex=0; let m; while((m=re.exec(sen))){
+        if(k==='period' && m[2]==='년' && +m[1]>=1900) continue;     // 2026년 같은 연도는 뺀다
+        if(k==='period' && m[2]==='일' && /\d\s*월\s*$/.test(sen.slice(0,m.index))) continue;   // 6월 1일 같은 날짜는 뺀다
+        const key=m[0].replace(/\s+/g,'').replace(/^만/,''); const g=G[k][key]=G[k][key]||{key, v:numVal(k,m), items:[]};
+        if(!g.items.some(x=>x.u===s.id && x.t===sen)) g.items.push({u:s.id, subj:s.subj, t:sen, at:m.index, len:m[0].length});
+      } });
+    }); });
+  });
+  NUM_IDX=Object.fromEntries(Object.entries(G).map(([k,o])=>[k, Object.values(o).sort((a,b)=>a.v-b.v)]));
+  return NUM_IDX;
+}
+function numSnippet(it){
+  const t=it.t, a=Math.max(0,it.at-45), b=Math.min(t.length, it.at+it.len+55);
+  return `${a>0?'…':''}${esc(t.slice(a,it.at))}<mark>${esc(t.slice(it.at,it.at+it.len))}</mark>${esc(t.slice(it.at+it.len,b))}${b<t.length?'…':''}`;
+}
+function numHTML(){
+  const idx=numIndex();
+  let groups=idx[numF.k].map(g=>({...g, items:g.items.filter(x=>numF.s==='all'||x.subj===numF.s)})).filter(g=>g.items.length);
+  if(numF.multi) groups=groups.filter(g=>new Set(g.items.map(x=>x.u)).size>=2);
+  const title=uid=>(ALL_SECS.find(s=>s.id===uid)||{}).title||uid;
+  return `<header class="part-head"><span class="eyebrow">부록</span><h2>헷갈리는 숫자 비교표</h2><span class="small muted">본문·요약에 나오는 숫자를 모아 같은 숫자끼리 묶었습니다. 같은 숫자가 여러 단원에 나오면 서로 바꿔 내는 함정이 잦습니다.</span></header>
+    <div class="chips" role="group" aria-label="숫자 종류">${Object.entries(NUM_KIND).map(([k,l])=>`<button class="chipbtn" data-act="num-k" data-v="${k}" aria-pressed="${numF.k===k}">${l} <span class="num" style="opacity:.7">${idx[k].length}</span></button>`).join('')}</div>
+    <div class="chips"><button class="chipbtn" data-act="num-s" data-v="all" aria-pressed="${numF.s==='all'}">전 과목</button>${SUBJ.map(s=>`<button class="chipbtn" data-act="num-s" data-v="${s.id}" aria-pressed="${numF.s===s.id}">${s.short}</button>`).join('')}
+      <button class="chipbtn" data-act="num-multi" aria-pressed="${numF.multi}">여러 단원에 나오는 숫자만</button></div>
+    <p class="small muted">${groups.length}개 숫자 · 작은 값부터. 문장은 자동으로 모은 것이라 맥락은 "보러 가기"로 본문에서 확인하세요.</p>
+    <div class="stack" style="gap:12px">${groups.map(g=>`<section class="num-g"><div class="num-k"><b class="num">${esc(g.key)}</b><span class="small muted">${new Set(g.items.map(x=>x.u)).size}개 단원 · ${g.items.length}곳</span></div>
+      <ul class="num-l">${g.items.map(it=>`<li><span class="small">${chip(it.subj)} <span class="muted">${esc(title(it.u))}</span> <button class="lnk" data-act="book-go" data-u="${it.u}">보러 가기</button></span><div>${numSnippet(it)}</div></li>`).join('')}</ul></section>`).join('')||'<div class="empty">조건에 맞는 숫자가 없습니다.</div>'}</div>`;
+}
+
+/* ---- 11. 글자 크기·줄간격 (모든 화면) ---- */
+const FS_STEPS={s:'작게', m:'보통', l:'크게', xl:'아주 크게'};
+let gfs='m', glh='n';
+try{ const o=JSON.parse(localStorage.getItem('afpk95-gfs')||'{}'); if(FS_STEPS[o.fs]) gfs=o.fs; if(o.lh==='w') glh='w'; }catch(e){}
+function fsApply(){ const r=document.documentElement; r.dataset.fs=gfs; r.dataset.lh=glh; try{ localStorage.setItem('afpk95-gfs', JSON.stringify({fs:gfs, lh:glh})); }catch(e){} }
+fsApply();
+function fsPanelHTML(){
+  return `<div class="row between"><b>글자 크기·줄간격</b><button class="btn sm" data-act="fl-close" aria-label="닫기">✕</button></div>
+    <div class="stack" style="gap:4px"><span class="small muted">글자 크기 (모든 화면)</span><div class="chips">${Object.entries(FS_STEPS).map(([k,l])=>`<button class="chipbtn" data-act="fs-set" data-v="${k}" aria-pressed="${gfs===k}">${l}</button>`).join('')}</div></div>
+    <div class="stack" style="gap:4px"><span class="small muted">줄간격</span><div class="chips"><button class="chipbtn" data-act="lh-set" data-v="n" aria-pressed="${glh==='n'}">보통</button><button class="chipbtn" data-act="lh-set" data-v="w" aria-pressed="${glh==='w'}">넓게</button></div></div>
+    <span class="small muted">기본서의 작게·보통·크게는 이 설정 위에 한 번 더 적용됩니다.</span>
+    <button class="lnk" data-act="keys-open" style="align-self:flex-start">⌨ 키보드 단축키 보기</button>`;
+}
+
+/* ---- 12. 키보드 단축키 ---- */
+const KEYS=[['전체','/','검색으로 이동'],['전체','?','단축키 보기'],['전체','Esc','열린 창 닫기'],['전체','Home / End','맨 위로 / 맨 아래로'],['전체','D','라이트·다크 전환'],['전체','P','집중 타이머'],
+  ['본문·기본서','H','형광펜 (칠하기 → 지우기 → 끄기)'],['본문·기본서','B','빈칸 (만들기 → 제거 → 끄기)'],['본문·기본서','M','메모 켜기·끄기'],['본문·기본서','T','소제목 목차 열기·닫기'],
+  ['문제 풀이','1 ~ 4','보기 고르기'],['문제 풀이','← →','이전·다음 문제'],['문제 풀이','Enter','다음 문제'],['학습모드','Space','정답 보기'],
+  ['빈칸암기','Enter','확인 → 다음'],['내 빈칸','Space · O · X','답 보기 · 맞음 · 틀림'],['암기카드','Space','카드 뒤집기 (카드에 초점이 있을 때)']];
+function keysHTML(){
+  return `<div class="row between"><b>⌨ 키보드 단축키</b><button class="btn sm" data-act="fl-close" aria-label="닫기">✕</button></div>
+    <div class="tbl-wrap"><table><thead><tr><th>화면</th><th>키</th><th>기능</th></tr></thead><tbody>${KEYS.map(([a,k,d])=>`<tr><td class="small muted">${a}</td><td><kbd>${k}</kbd></td><td>${d}</td></tr>`).join('')}</tbody></table></div>
+    <span class="small muted">입력칸에 글자를 쓰는 중에는 단축키가 동작하지 않습니다.</span>`;
+}
+document.addEventListener('keydown', e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing||e.keyCode===229) return;
+  const t=e.target; if(t && t.matches && t.matches('input,textarea,select,[contenteditable="true"]')){ if(e.key==='Escape') t.blur(); return; }
+  const k=e.key, K=k.length===1?k.toLowerCase():k;
+  const click=sel=>{ const b=document.querySelector(sel); if(b && !b.disabled){ b.click(); return true; } return false; };
+  if(k==='Escape'){ if(flPop){ flPop=null; flPopRender(); return; } if($('#mk-pop')){ mkPopClose(); return; } if(tocOpen){ tocOpen=false; tocSave(); tocBuild(); } return; }
+  if(k==='?'){ e.preventDefault(); flPop=flPop==='keys'?null:'keys'; flPopRender(); return; }
+  if(k==='/'){ e.preventDefault(); const go=()=>{ const i=$('#sum-q'); if(i){ i.focus(); i.select(); } }; if(TAB==='summary') go(); else { location.hash='summary'; setTimeout(go, 120); } return; }
+  if(k==='Home'&&!e.shiftKey){ e.preventDefault(); scrollTo({top:0, behavior:'smooth'}); return; }
+  if(k==='End'&&!e.shiftKey){ e.preventDefault(); scrollTo({top:document.documentElement.scrollHeight, behavior:'smooth'}); return; }
+  if(K==='d'||K==='ㅇ'){ click('[data-act="fl-theme"]'); return; }
+  if(K==='p'||K==='ㅔ'){ flPop=flPop==='tm'?null:'tm'; flPopRender(); return; }
+  if(TAB==='summary'||TAB==='book'){
+    const m={h:'hl',ㅗ:'hl',b:'cz',ㅠ:'cz',m:'nt',ㅡ:'nt'}[K]; if(m){ e.preventDefault(); click(`#mk-float [data-k="${m}"]`); return; }
+    if(K==='t'||K==='ㅅ'){ e.preventDefault(); tocAct('toc-toggle', document.body); return; }
+  }
+  if(TAB==='quiz' && qz && !qz.done && qz.mode!=='study' && !isPaperMode(qz.mode)){
+    if(/^[1-4]$/.test(k)){ const bs=document.querySelectorAll('#p-quiz .choice[data-act="qz-pick"]'); const b=bs[+k-1]; if(b && !b.disabled){ e.preventDefault(); b.click(); } return; }
+    if(k==='ArrowRight'||(k==='Enter'&&!(t&&t.matches&&t.matches('button')))){ if(click('#p-quiz [data-act="qz-next"]')||click('#p-quiz [data-act="qz-finish"]')) e.preventDefault(); return; }
+    if(k==='ArrowLeft'){ if(click('#p-quiz [data-act="qz-prev"]')) e.preventDefault(); return; }
+  }
+});
+
+/* ---- 13. 전체 검색: 본문·요약 + 예상문제 + 암기카드 + 내 메모 ---- */
+function srHL(text, q){ const s=String(text), i=s.toLowerCase().indexOf(q); if(i<0) return esc(s.length>120?s.slice(0,120)+'…':s);
+  const a=Math.max(0,i-50), b=Math.min(s.length,i+q.length+70); return `${a>0?'…':''}${esc(s.slice(a,i))}<mark>${esc(s.slice(i,i+q.length))}</mark>${esc(s.slice(i+q.length,b))}${b<s.length?'…':''}`; }
+let srHits=null;
+function searchMoreHTML(q){
+  const qs=QB.filter(x=>[x.q, ...(x.c||[]), x.e||''].join(' ').toLowerCase().includes(q));
+  const cs=allCards().filter(c=>(c.q+' '+c.a).toLowerCase().includes(q));
+  const ns=[]; Object.entries(state.marks).forEach(([uid,l])=>l.forEach(m=>{ if(m.k==='nt' && (m.t+' '+(m.n||'')).toLowerCase().includes(q)) ns.push({uid,m}); }));
+  const qm=Object.entries(state.qmemo||{}).filter(([id,t])=>QB_BY[id] && t.toLowerCase().includes(q));
+  srHits={qs};
+  const sec=(title, n, body)=>`<details class="card sr-sec" ${n?'open':''}><summary><b>${title}</b> <span class="num muted">${n}</span></summary>${body}</details>`;
+  return sec('예상문제', qs.length, qs.length?`<div class="row"><button class="btn sm pri" data-act="sr-study">검색된 문제 ${qs.length}개 학습모드로 보기</button></div>
+      <ul class="sr-l">${qs.slice(0,15).map(x=>`<li><span class="small">${chip(x.s)}</span> ${srHL(x.q+' '+(x.c||[]).join(' / '), q)}</li>`).join('')}</ul>${qs.length>15?`<p class="small muted">외 ${qs.length-15}개는 학습모드에서 보세요.</p>`:''}`:'<p class="small muted">없음</p>')
+   + sec('암기카드', cs.length, cs.length?`<ul class="sr-l">${cs.slice(0,15).map(c=>`<li><span class="small">${chip(c.s)}</span> <b>${srHL(c.q,q)}</b><div class="small muted">${srHL(c.a,q)}</div></li>`).join('')}</ul>${cs.length>15?`<p class="small muted">외 ${cs.length-15}장</p>`:''}`:'<p class="small muted">없음</p>')
+   + sec('내 메모', ns.length+qm.length, ns.length+qm.length?`<ul class="sr-l">${ns.map(({uid,m})=>`<li><span class="unt">${esc(m.t.slice(0,60))}</span> · 📝 ${srHL(m.n||'',q)} <button class="lnk" data-act="mk-go" data-u="${uid}">보러 가기</button></li>`).join('')}${qm.map(([id,t])=>`<li>📝 ${srHL(t,q)} <span class="small muted">(예상문제)</span> <button class="lnk" data-act="mk-qgo" data-q="${id}">문제 보기</button></li>`).join('')}</ul>`:'<p class="small muted">없음</p>');
+}
+
+/* ---- 14. 학습 기록 백업·불러오기 ---- */
+function backupCardHTML(){
+  return `<div class="card stack"><div class="sec-head"><h2>학습 기록 백업</h2><span class="small muted">진도·오답·형광펜·빈칸·메모·공부시간 전부</span></div>
+    <div class="row"><button class="btn pri" data-act="bk-export">백업 파일 내려받기</button><label class="btn" style="cursor:pointer">백업 파일 불러오기<input type="file" id="bk-file" accept=".json,application/json" hidden></label></div>
+    <div id="bk-confirm"></div>
+    <p class="small muted" style="margin:0">평소에는 자동 저장·동기화되지만, 기기를 바꾸거나 혹시 모를 상황에 대비해 가끔 내려받아 두세요. 불러오면 지금 기록이 파일 내용으로 바뀝니다.</p></div>`;
+}
+async function bkExport(){
+  const data=JSON.stringify({app:'afpk95', at:new Date().toISOString(), state}, null, 1), filename=`AFPK_학습기록_${todayStr()}.json`;
+  let dl=null; try{ dl = window.claude && claude.use ? await claude.use('downloads') : null; }catch(e){ dl=null; }
+  if(dl){ try{ await dl.save({filename, data, mimeType:'application/json'}); toast('백업 파일을 저장했습니다.', 3000); }catch(e){ if(!(e && e.code==='declined')) toast('이 화면에서는 파일을 저장할 수 없습니다.', 3000); } return; }
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:'application/json'})); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast('백업 파일을 내려받았습니다.', 3000); }
+  catch(e){ toast('이 화면에서는 파일을 저장할 수 없습니다.', 3000); }
+}
+let bkPending=null;
+document.addEventListener('change', e=>{
+  if(!e.target || e.target.id!=='bk-file') return; const f=e.target.files && e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ try{ const o=JSON.parse(r.result), d=o && o.state ? o.state : o; if(!d || typeof d!=='object' || !d.settings) throw 0;
+      bkPending=d; const box=$('#bk-confirm'); if(box) box.innerHTML=`<div class="note stack" style="gap:8px"><span>${esc(f.name)} · ${o.at?`${esc(String(o.at).slice(0,10))} 백업 · `:''}읽은 장 ${Object.keys(d.read||{}).length} · 푼 문제 ${Object.keys(d.qs||{}).length}</span><span>지금 기록을 이 파일 내용으로 바꿀까요? 되돌릴 수 없습니다.</span><div class="row"><button class="btn danger" data-act="bk-apply">바꾸기</button><button class="btn" data-act="bk-cancel">취소</button></div></div>`; }
+    catch(err){ toast('AFPK 학습 기록 백업 파일이 아닙니다.', 3500); } e.target.value=''; };
+  r.readAsText(f);
+});
+function bkAct(act){
+  if(act==='bk-export'){ bkExport(); return; }
+  if(act==='bk-cancel'){ bkPending=null; const b=$('#bk-confirm'); if(b) b.innerHTML=''; return; }
+  if(act==='bk-apply' && bkPending){ state=normalize(bkPending); bkPending=null; save(); renderAll(); toast('백업 파일의 기록으로 바꿨습니다.', 3500); return; }
+}
+
+/* ---- 15. 시험 전날 요약 (한 페이지, 인쇄 가능) ---- */
+function eveBodyHTML(){
+  const myNg=mkRunPool('ng').slice(0,30), czw=czAll().filter(c=>czWeak(c.id)>0).sort((a,b)=>czWeak(b.id)-czWeak(a.id)).slice(0,30);
+  const wrong=Object.keys(state.wrong).filter(id=>QB_BY[id]).slice(0,40);
+  const notes=[]; Object.entries(state.marks).forEach(([uid,l])=>l.forEach(m=>{ if(m.k==='nt') notes.push({uid,m}); }));
+  const title=uid=>(ALL_SECS.find(s=>s.id===uid)||{}).title||uid;
+  const pts=SUBJ.map(s=>`<section class="eve-s"><h3>${s.name} <span class="small muted">${s.q}문항 · ${failTxt(s)}</span></h3><ul>${SUMMARY[s.id].map(u=>`<li><b>${u.title}</b> ${stars(u.id)}${u.x?`<div>${u.x}</div>`:''}${(HL[u.id]||[]).length?`<div class="small muted">출제 포인트 · ${(HL[u.id]||[]).map(esc).join(' / ')}</div>`:''}</li>`).join('')}</ul></section>`).join('');
+  return `<section class="eve-s"><h3>자주 틀린 내 빈칸 <span class="small muted">${myNg.length}개</span></h3>${myNg.length?`<ul>${myNg.map(({uid,m})=>{ const c=mkContext(uid,m); return `<li>${esc(c.b)}<mark>${esc(m.t)}</mark>${esc(c.a)} <span class="small muted">(${esc(title(uid))} · X ${m.ng}회)</span></li>`; }).join('')}</ul>`:'<p class="small muted">오답률 50% 이상인 내 빈칸이 없습니다.</p>'}</section>
+    <section class="eve-s"><h3>많이 틀린 빈칸암기 <span class="small muted">${czw.length}개</span></h3>${czw.length?`<ul>${czw.map(c=>`<li>${czSentenceHTML(c,`<mark>${esc(c.ans)}</mark>`)}</li>`).join('')}</ul>`:'<p class="small muted">아직 많이 틀린 빈칸이 없습니다.</p>'}</section>
+    <section class="eve-s"><h3>오답노트 문제 <span class="small muted">${wrong.length}문항</span></h3>${wrong.length?`<ol>${wrong.map(id=>{ const q=QB_BY[id]; return `<li><div>${esc(q.q)}</div><div class="small"><b>정답</b> ${esc(q.c?q.c[q.a]:'')} · ${esc(q.e||'')}</div>${state.qmemo&&state.qmemo[id]?`<div class="small">📝 ${esc(state.qmemo[id])}</div>`:''}</li>`; }).join('')}</ol>`:'<p class="small muted">오답노트가 비어 있습니다.</p>'}</section>
+    ${notes.length?`<section class="eve-s"><h3>내 메모 <span class="small muted">${notes.length}개</span></h3><ul>${notes.map(({uid,m})=>`<li><b>${esc(m.t.slice(0,60))}</b> · ${esc(m.n||'')} <span class="small muted">(${esc(title(uid))})</span></li>`).join('')}</ul></section>`:''}
+    <section class="eve-s"><h3>과목별 시험 포인트 · 출제 포인트</h3></section>${pts}`;
+}
+function eveHTML(){
+  return `<header class="part-head"><span class="eyebrow">부록</span><h2>시험 전날 1시간 요약</h2><span class="small muted">내가 자주 틀린 것과 시험 포인트만 한 페이지에 모았습니다. 시험장 가기 전 마지막으로 훑어보세요.</span></header>
+    <div class="row"><button class="btn pri" data-act="eve-print" data-how="print">🖨 인쇄</button><button class="btn" data-act="eve-print" data-how="file">인쇄용 파일 저장</button></div>
+    ${eveBodyHTML()}`;
+}
+function eveAct(act, a){ if(act==='eve-print'){ runPrint(a.dataset.how, `AFPK 시험 전날 요약 ${todayStr()}`, `<section class="pr-page"><div class="pr-title"><span class="eyebrow">제95회 AFPK · 시험 전날 1시간 요약</span><h2>내가 자주 틀린 것 + 시험 포인트</h2></div>${eveBodyHTML()}</section>`); } }
+function featAct(act, a){
+  if(act==='fl-close'){ flPop=null; flPopRender(); return true; }
+  if(act==='fl-tm'){ flPop=flPop==='tm'?null:'tm'; flPopRender(); return true; }
+  if(act==='fl-fs'){ flPop=flPop==='fs'?null:'fs'; flPopRender(); return true; }
+  if(act==='keys-open'){ flPop='keys'; flPopRender(); return true; }
+  if(act==='fs-set'){ gfs=a.dataset.v; fsApply(); flPopRender(); tocPlace(); return true; }
+  if(act==='lh-set'){ glh=a.dataset.v; fsApply(); flPopRender(); return true; }
+  if(act.startsWith('tm-')){ tmAct(act, a); return true; }
+  if(act==='qz-pace'){ paceOn=!paceOn; try{ localStorage.setItem('afpk95-pace', paceOn?'1':'0'); }catch(e){} if(qz){ qz.ptIdx=-1; } renderQuiz(); return true; }
+  if(act==='why-retry'){ const qs=Object.keys(state.why).filter(id=>QB_BY[id] && state.why[id]===a.dataset.w).map(id=>QB_BY[id]); if(qs.length) startQuiz('wrong', `틀린 이유 · ${WHY.find(w=>w[0]===a.dataset.w)[1]}`, shuffleArr(qs).slice(0,30)); return true; }
+  if(act==='num-k'){ numF.k=a.dataset.v; renderBook(); return true; }
+  if(act==='num-s'){ numF.s=a.dataset.v; renderBook(); return true; }
+  if(act==='num-multi'){ numF.multi=!numF.multi; renderBook(); return true; }
+  if(act==='sr-study'){ if(srHits && srHits.qs.length) startStudy(`검색: ${sumQ.trim()}`, srHits.qs); return true; }
+  if(act.startsWith('bk-')){ bkAct(act); return true; }
+  if(act.startsWith('eve-')){ eveAct(act, a); return true; }
+  return false;
+}
+
 /* ===================== 기본서 (처음부터 끝까지 읽기) ===================== */
 const BOOK_ORDER = SUBJ.map(s=>s.id);   /* 시험 과목 순서: 모듈1 → 모듈2 */
 const BOOK_FS = {s:'0.95rem', m:'1.05rem', l:'1.18rem'};
@@ -6390,17 +6712,19 @@ function renderBook(){
       <div class="chips" role="tablist" aria-label="편 선택">
         <button class="chipbtn" data-act="book-part" data-p="guide" aria-pressed="${bookPart==='guide'}">들어가며</button>
         <button class="chipbtn" data-act="book-part" data-p="abbr" aria-pressed="${bookPart==='abbr'}">약어 사전</button>
+        <button class="chipbtn" data-act="book-part" data-p="num" aria-pressed="${bookPart==='num'}">숫자 비교표</button>
+        <button class="chipbtn" data-act="book-part" data-p="eve" aria-pressed="${bookPart==='eve'}">시험 전날 요약</button>
         ${BOOK_ORDER.map(p=>{ const us=SUMMARY[p], rd=us.filter(u=>state.read[u.id]).length;
           return `<button class="chipbtn" data-act="book-part" data-p="${p}" aria-pressed="${bookPart===p}">${SUBJ_BY[p].short} <span class="num" style="opacity:.7">${rd}/${us.length}</span></button>`; }).join('')}
       </div>
-      ${bookPart!=='guide'&&bookPart!=='abbr'?`<div class="chips" aria-label="${SUBJ_BY[bookPart].name} 장 선택">
+      ${SUBJ_BY[bookPart]?`<div class="chips" aria-label="${SUBJ_BY[bookPart].name} 장 선택">
         <button class="chipbtn" data-act="book-unit" data-u="intro" aria-pressed="${bookUnit==='intro'}">편 소개</button>
         ${SUMMARY[bookPart].map((u,i)=>`<button class="chipbtn" data-act="book-unit" data-u="${u.id}" aria-pressed="${bookUnit===u.id}">${i+1}. ${esc(u.t)}${state.read[u.id]?' ✓':''}</button>`).join('')}
         <button class="chipbtn" data-act="book-unit" data-u="all" aria-pressed="${bookUnit==='all'}">편 전체 이어 읽기</button>
       </div>`:''}
       <details class="toc"><summary class="btn">전체 목차 펼치기</summary><ol class="toc-list">${toc}</ol></details>
     </div>
-    <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():partHTML(bookPart, bookUnit)}</article>`;
+    <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():bookPart==='num'?numHTML():bookPart==='eve'?eveHTML():partHTML(bookPart, bookUnit)}</article>`;
   mkApply($('#book-art')); mkRefreshUI();
   observeBook();
   if(bookTarget){ const t=document.getElementById('bk-'+bookTarget); bookTarget=null; if(t) t.scrollIntoView({block:'start'}); }
@@ -8313,7 +8637,7 @@ function quizRunHTML(){
     <div class="card row between">
       <div class="stack" style="gap:2px"><span class="eyebrow">${esc(qz.title)}</span><b class="num">${qz.idx+1} / ${N}</b></div>
       <div class="row">${mock?`<span class="small muted">모듈${qz.phase} 남은 시간</span><b class="num" id="qz-timer" style="font-size:1.2rem">${fmtClock(mockRemain())}</b>`:''}
-        <button class="btn sm" data-act="qz-exit">${mock?'나가기(저장)':'그만 풀기'}</button></div>
+        ${mock?'':paceHTML(it, shown)}<button class="btn sm" data-act="qz-exit">${mock?'나가기(저장)':'그만 풀기'}</button></div>
     </div>
     <div class="progress"><div style="width:${(qz.idx+1)/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
@@ -8321,7 +8645,7 @@ function quizRunHTML(){
         ${mock?'':`<button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${u?esc(u.t):''}">본문 보기</button>`}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${it.o.map((orig,k)=>choiceHTML(it,q,k,orig,chosen,shown)).join('')}</div>
-      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>${qMemoHTML(q.id)}`:''}
+      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>${chosen!==q.a?whyChipsHTML(q.id):''}${qMemoHTML(q.id)}`:''}
       <div class="row between">
         <button class="btn" data-act="qz-prev" ${qz.idx<=lo?'disabled':''}>이전</button>
         ${atEnd ? (mock?'':`<button class="btn pri" data-act="qz-finish">결과 보기</button>`) : `<button class="btn ${shown||mock?'pri':''}" data-act="qz-next">다음</button>`}
@@ -8349,6 +8673,7 @@ function quizResultHTML(){
     head=`<div class="card stack"><span class="eyebrow">${esc(qz.title)} 결과</span>
       <div class="verdict"><span class="big">${okN}<span class="muted" style="font-size:1rem"> / ${answered.length}</span></span><span class="num" style="font-size:1.2rem">${answered.length?Math.round(okN/answered.length*100):0}%</span></div>
       <p class="small muted">${N}문항 중 ${answered.length}문항을 풀었습니다. ${res.every(r=>r.q.type==='calc')?'계산 연습은 매번 숫자가 바뀌어 문항을 저장하지 않고 유형별 정답률만 기록합니다.':'틀린 문제는 오답노트에 저장됐고 1·3·7·14일 뒤에 다시 나옵니다.'}</p>
+      ${paceResultHTML()}
       <div class="row"><button class="btn pri" data-act="qz-home">문제 홈으로</button>${rvNextBtn()}${res.every(r=>r.q.type==='calc')?`<button class="btn" data-act="qz-calc" data-g="${res[0].q.gen}" data-n="5">같은 유형 다시 5문제</button>`:(res.some(r=>r.ch!==undefined&&!r.ok)?'<button class="btn" data-act="qz-wrong">오답 다시 풀기</button>':'')}</div></div>`;
   }
   const wrongs=res.filter(r=>!r.ok);
@@ -8612,8 +8937,8 @@ function buildWeakSet(n){
   });
   return shuffleArr(picked).slice(0,n).sort((a,b)=>MOCK_ORDER.indexOf(a.s)-MOCK_ORDER.indexOf(b.s));
 }
-const WHY=[['concept','개념을 몰랐다'],['trap','함정에 걸렸다'],['calc','계산 실수'],['time','시간 부족·찍었다']];
-const WHY_TIP={concept:'본문과 학습모드로 개념을 다시 읽으세요.', trap:'학습모드의 “함정” 해설을 읽고, 보기 끝까지 읽는 습관을 들이세요.', calc:'계산 연습 탭에서 해당 유형을 반복하고 계산기 키 순서를 확인하세요.', time:'시험모드에서 시간을 재고 풀며 헷갈리는 문제는 표시하고 넘어가는 연습을 하세요.'};
+const WHY=[['concept','개념을 몰랐다'],['num','숫자·기간 헷갈림'],['trap','함정에 걸렸다'],['misread','문제를 잘못 읽음'],['calc','계산 실수'],['time','시간 부족·찍었다']];
+const WHY_TIP={num:'헷갈리는 숫자 비교표(기본서 부록)에서 같은 숫자끼리 비교해 보세요.', misread:'"옳지 않은 것"·"모두 고르면" 같은 질문 끝부분에 밑줄을 긋는 습관을 들이세요.', concept:'본문과 학습모드로 개념을 다시 읽으세요.', trap:'학습모드의 “함정” 해설을 읽고, 보기 끝까지 읽는 습관을 들이세요.', calc:'계산 연습 탭에서 해당 유형을 반복하고 계산기 키 순서를 확인하세요.', time:'시험모드에서 시간을 재고 풀며 헷갈리는 문제는 표시하고 넘어가는 연습을 하세요.'};
 function whyChipsHTML(qid){
   return `<div class="row" style="gap:6px;margin-top:2px"><span class="small muted">틀린 이유</span>${WHY.map(([k,l])=>`<button class="chipbtn" data-act="qz-why" data-q="${qid}" data-w="${k}" aria-pressed="${state.why[qid]===k}">${l}</button>`).join('')}</div>`;
 }
@@ -8634,7 +8959,7 @@ function reviewCardHTML(){
     ${weak.length?`<div class="stack" style="gap:6px"><span class="small" style="font-weight:600">정답률이 낮은 단원</span>${weak.map(x=>`<div class="row between"><span class="small"><b>${x.s.title}</b> <span class="muted">${chip(x.s.subj)} ${x.a}문제 · <span style="color:var(--bad);font-weight:700">${Math.round(x.c/x.a*100)}%</span></span></span>
         <span class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="qz-study-unit" data-u="${x.s.id}">학습</button><button class="btn sm pri" data-act="qz-unit" data-u="${x.s.id}">풀기</button></span></div>`).join('')}</div>`
       : `<p class="small muted">${attempted<10?'문제를 풀면 정답률이 낮은 단원이 여기에 표시됩니다. 처음이라면 예상문제 탭에서 학습모드로 시작해 보세요.':'정답률이 70% 미만인 단원이 아직 없습니다.'}</p>`}
-    ${whyStatsHTML(wrongIds)}
+    ${whyReportHTML()}
   </div>`;
 }
 
@@ -10655,6 +10980,7 @@ document.addEventListener('click', e=>{
   const tb=e.target.closest('.tab'); if(tb){ location.hash=tb.dataset.tab; return; }
   const a=e.target.closest('[data-act]'); if(!a) return;
   const act=a.dataset.act;
+  if(featAct(act, a)) return;
   if(act==='day'){ const d=a.dataset.date; if(state.done[d]) delete state.done[d]; else state.done[d]=true; save(); renderTab(); }
   else if(act==='cl'){ const id=a.dataset.id; if(state.checklist[id]) delete state.checklist[id]; else state.checklist[id]=true; save(); renderTab(); }
   else if(act==='prof-reset'){ state.settings.prof=Object.fromEntries(SUBJ.map(s=>[s.id,s.prof])); save(); renderPlanForm(); renderPlanOut(); }
@@ -10816,7 +11142,7 @@ function handleQuiz(act, a){
     const it=qz.items[qz.idx], o=+a.dataset.o;
     if(mock){ qz.ans[it.id]=o; saveQMock(); renderQuiz(); return; }
     if(qz.shown[it.id]) return;
-    qz.ans[it.id]=o; qz.shown[it.id]=true; recordQ(it.id, o===QB_BY[it.id].a); save(); renderQuiz(); return;
+    paceRecord(it.id); qz.ans[it.id]=o; qz.shown[it.id]=true; recordQ(it.id, o===QB_BY[it.id].a); save(); renderQuiz(); return;
   }
   if(act==='qz-next'){ qz.idx=Math.min(qz.idx+1, hi-1); qzConfirm=null; renderQuiz(); goTop(); return; }
   if(act==='qz-prev'){ qz.idx=Math.max(qz.idx-1, lo); qzConfirm=null; renderQuiz(); goTop(); return; }
