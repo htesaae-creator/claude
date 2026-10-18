@@ -180,6 +180,7 @@ tr.sum td{font-weight:700;border-bottom:2px solid var(--ink)}
 .fc .q{font-size:1.15rem;font-weight:600;line-height:1.5}
 .fc .a{font-size:1.02rem;line-height:1.7;border-top:1px dashed var(--line);padding-top:12px;white-space:pre-line}
 .fc .hint{font-size:.8rem;color:var(--muted)}
+.cz-hint-txt{align-self:center;padding:0 4px;color:var(--muted)} .cz-hint-txt b{color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chipbtn{font:inherit;font-size:.84rem;font-weight:600;padding:4px 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer}
 .chipbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
@@ -10158,7 +10159,7 @@ function czRunHTML(){
   if(!S.checked){
     body=`<div class="cz-sent">${czSentenceHTML(c, inputHtml)}</div>
       <div class="row"><button class="btn pri" data-act="cz-check">확인 <span class="muted small" style="color:inherit;opacity:.8">Enter</span></button>
-        <button class="btn" data-act="cz-hint">${S.hint?`힌트: “${esc(c.ans.trim().slice(0,Math.max(1,Math.ceil(flat.length/3))))}…”`:'첫 글자 힌트'}</button><button class="btn" data-act="cz-skip">모르겠어요</button></div>`;
+        ${S.hint?`<span class="cz-hint-txt">힌트: “<b>${esc(Array.from(c.ans.trim()).slice(0,S.hint).join(''))}</b>…”</span>`:''}${!S.hint?'<button class="btn" data-act="cz-hint">첫 글자 힌트</button>':S.hint===1&&flat.length>2?'<button class="btn" data-act="cz-hint">2글자 힌트</button>':''}<button class="btn" data-act="cz-skip">모르겠어요</button></div>`;
   } else {
     const ok=S.last.ok;
     body=`<div class="cz-sent">${czSentenceHTML(c, ok?`<mark class="cz-ok">${esc(c.ans)}</mark>`:`${inputHtml.replace('class="cz-in"','class="cz-in bad"')} <mark class="cz-ok">${esc(c.ans)}</mark>`)}</div>
@@ -10205,7 +10206,7 @@ function handleCloze(act, a){
   if(act==='cz-retry'){ const w=czS.ids.filter(i=>czS.res[i]===false).map(i=>CLOZE_BY[i]); czStart(czOrder(w,'wrong').length?czOrder(w,'wrong'):shuffleArr(w), '틀린 빈칸 다시'); return; }
   if(!czS || czS.idx>=czS.ids.length) return;
   const S=czS, id=S.ids[S.idx], c=CLOZE_BY[id];
-  if(act==='cz-hint'){ S.hint=true; const keep=($('#cz-in')||{}).value||''; renderCloze(); const i=$('#cz-in'); if(i){ i.value=keep; i.focus(); } return; }
+  if(act==='cz-hint'){ S.hint=Math.min(2,(S.hint|0)+1); const keep=($('#cz-in')||{}).value||''; renderCloze(); const i=$('#cz-in'); if(i){ i.value=keep; i.focus(); } return; }
   if(act==='cz-check' || act==='cz-skip'){
     if(S.checked) return;
     const input=act==='cz-skip'?'':($('#cz-in')||{}).value||'';
