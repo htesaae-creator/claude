@@ -15,6 +15,7 @@
   --f-serif:"Nanum Myeongjo", "Batang", "AppleMyungjo", serif;
   --sheet:#FFFFFF; --sheet-ink:#1A1A1A; --sheet-gray:#ECECEC; --sheet-bar:#7A7A7A; --sheet-line:#9A9A9A;
   --omr-line:#D2354B; --omr-bg:#FFF6F7; --omr-faint:#F4C9CF;
+  --uhl:#FFC2D9; --czbg:#C9D3E3;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#0E131B; --surface:#161D28; --ink:#E4E9F1; --muted:#97A2B4; --line:#2A3443; --line2:#212A37;
@@ -23,6 +24,7 @@
   --dot:#334054; --mark:#5E4C10; color-scheme:dark;
   --sheet:#191C21; --sheet-ink:#E6E6E3; --sheet-gray:#262A31; --sheet-bar:#4A4F58; --sheet-line:#555B66;
   --omr-line:#F0788A; --omr-bg:#24171A; --omr-faint:#5A2C34;
+  --uhl:#6E2B4A; --czbg:#3A4658;
 }}
 :root[data-theme="dark"]{
   --paper:#0E131B; --surface:#161D28; --ink:#E4E9F1; --muted:#97A2B4; --line:#2A3443; --line2:#212A37;
@@ -31,6 +33,7 @@
   --dot:#334054; --mark:#5E4C10; color-scheme:dark;
   --sheet:#191C21; --sheet-ink:#E6E6E3; --sheet-gray:#262A31; --sheet-bar:#4A4F58; --sheet-line:#555B66;
   --omr-line:#F0788A; --omr-bg:#24171A; --omr-faint:#5A2C34;
+  --uhl:#6E2B4A; --czbg:#3A4658;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -407,6 +410,24 @@ mark.cz-ok{background:var(--ok-soft);color:var(--ok);font-weight:700}
 }
 abbr[title]{text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
 .abx{color:var(--muted);font-size:.86em;font-weight:400}
+.mk-area{display:flex;flex-direction:column;gap:inherit}
+.uhl{background:var(--uhl);border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.ucz{cursor:pointer;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.ucz:not(.open){color:transparent!important;background:var(--czbg)!important;border-bottom:2px solid var(--muted)}
+.ucz:not(.open) *{color:transparent!important;background:transparent!important;border-color:transparent!important}
+.ucz.open{outline:1px dashed var(--accent);outline-offset:1px}
+body.mk-on .mk-area{cursor:text;-webkit-user-select:text;user-select:text}
+body[data-mk="hl-x"] .uhl, body[data-mk="cz-x"] .ucz{cursor:not-allowed;outline:1px dashed var(--bad)}
+.mk-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mk-btn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+body[data-mk="hl-x"] .mk-btn[data-k="hl"], body[data-mk="cz-x"] .mk-btn[data-k="cz"]{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+.mk-stats-box{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.mk-pop{position:absolute;z-index:30;display:flex;gap:6px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:6px 8px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.mk-o,.mk-x{font:inherit;font-weight:700;min-width:40px;min-height:34px;border-radius:8px;cursor:pointer;border:1px solid}
+.mk-o{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)} .mk-x{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+#mk-float{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;gap:8px;align-items:center;background:var(--ink);color:var(--paper);padding:8px 10px 8px 14px;border-radius:999px;font-size:.88rem;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+body[data-mk$="-x"] #mk-float{background:var(--bad);color:#fff}
+@media print{.mk-tools,.mk-stats-box,#mk-float,.mk-pop{display:none!important}}
 </style>
 
 <div class="wrap">
@@ -3239,7 +3260,7 @@ function defaultState(){
   return {v:1, settings:{start: t>'2026-10-12'?t:'2026-10-12', exam:EXAM.date, wd:2, we:5,
     prof:Object.fromEntries(SUBJ.map(s=>[s.id,s.prof]))},
     checklist:{}, done:{}, mocks:[], cards:{known:{}, custom:[], sr:{}}, read:{}, qs:{}, wrong:{}, studied:{}, bookmark:null,
-    sr:{}, why:{}, calc:{}, cz:{}, updated:''};
+    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, updated:''};
 }
 function normalize(d){
   const s=defaultState(); if(!d||typeof d!=='object') return s;
@@ -3256,6 +3277,7 @@ function normalize(d){
     wrong:{...(d.wrong||{})},
     studied:{...(d.studied||{})},
     bookmark:typeof d.bookmark==='string'?d.bookmark:null,
+    marks:Object.fromEntries(Object.entries(d.marks||{}).map(([k,v])=>[k, Array.isArray(v)?v.filter(m=>m&&typeof m.t==='string'&&m.t).map(m=>({...m, ok:m.ok|0, ng:m.ng|0})):[]])),
     updated:d.updated||''};
 }
 let state = defaultState();
@@ -3390,7 +3412,7 @@ function setTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===TAB?'true':'false'));
   document.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==TAB);
   document.body.classList.toggle('exam-on', examOn());
-  renderTab();
+  renderTab(); mkPopClose(); mkRefreshUI();
 }
 function renderHeader(){
   const t=todayStr(), n=diffDays(t,state.settings.exam);
@@ -3845,12 +3867,12 @@ function secHTML(s, showSubj){
       </div>
       <button class="chipbtn" style="flex:0 0 auto" data-act="sum-read" data-id="${s.id}" aria-pressed="${rd}">${rd?'읽음 ✓':'읽음 표시'}</button>
     </div>
-    ${abbrUnit(`${sumMode==='full' && BODY[s.id] ? bodyHTML(s.id) + '<div class="sum-label">요약 정리</div>' : figsHTML(s.id)}
+    <div class="mk-area" data-mu="${s.id}">${abbrUnit(`${sumMode==='full' && BODY[s.id] ? bodyHTML(s.id) + '<div class="sum-label">요약 정리</div>' : figsHTML(s.id)}
     ${s.p?`<ul>${liDefs(s.p)}</ul>`:''}
     ${(s.tb||[]).map(t=>`${t.cap?`<div class="cap">${t.cap}</div>`:''}<div class="tbl-wrap"><table><thead><tr>${t.h.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${t.r.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('')}
     ${s.f?`<pre class="fml">${s.f.map(esc).join('\n')}</pre>`:''}
     ${s.x?`<div class="tip"><b>시험 포인트</b> · ${s.x}</div>`:''}
-    ${sumMode==='full'?oxHTML(s.id):''}`)}
+    ${sumMode==='full'?oxHTML(s.id):''}`)}</div>
   </article>`;
 }
 function renderSummary(){
@@ -3861,18 +3883,19 @@ function renderSummary(){
       <div class="chips" role="group" aria-label="보기 방식">
         <button class="chipbtn" data-act="sum-mode" data-m="full" aria-pressed="${sumMode==='full'}">본문 + 요약</button>
         <button class="chipbtn" data-act="sum-mode" data-m="sum" aria-pressed="${sumMode==='sum'}">요약만 (복습용 · 도식 포함)</button>
-        <button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">형광펜 ${hlOn?'켜짐':'꺼짐'}</button>
+        <button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button>
         <button class="btn sm" data-act="book-part" data-p="abbr">약어 사전</button>
         <button class="btn sm" data-act="pr-open" data-k="sum" aria-expanded="false">🖨 인쇄</button>
       </div>
       ${printPanelHTML('sum')}
-      <span class="small muted"><mark>형광펜</mark> = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상)</span>
+      <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상)</span>
+      ${mkToolsHTML()}
       <input type="search" id="sum-q" placeholder="전체 검색: 예) 유류분, 듀레이션, 고지의무" value="${esc(sumQ)}" aria-label="요약본 검색">
       <div class="chips">${STUDY_ORDER.map(id=>{const n=ALL_SECS.filter(s=>s.subj===id), r=readCount(n);
         return `<button class="chipbtn" data-act="sum-subj" data-s="${id}" aria-pressed="${!sumQ&&sumSubj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${r}/${n.length}</span></button>`;}).join('')}</div>
     </div>
     <div class="stack" id="sum-list" style="gap:14px"></div>`;
-  renderSumList();
+  renderSumList(); mkRefreshUI();
 }
 function renderSumList(){
   const q=sumQ.trim().toLowerCase(); const el=$('#sum-list'); if(!el) return;
@@ -3885,7 +3908,174 @@ function renderSumList(){
     el.innerHTML = `<div class="row between"><h2>${s.name}</h2><span class="small muted">${s.q}문항 · ${failTxt(s)} · 목표 ${s.target}개</span></div>` +
       SUMMARY[sumSubj].map(x=>secHTML({...x, subj:sumSubj},false)).join('');
   }
+  mkApply(el);
   if(sumTarget){ const t=document.getElementById('sec-'+sumTarget); sumTarget=null; if(t) t.scrollIntoView({block:'start'}); }
+}
+
+/* ===================== 내 형광펜 · 빈칸뚫기 (본문·요약, 기본서) =====================
+   표시는 state.marks[단원]에 {id, k:'hl'|'cz', t:고른 글자, pre:바로 앞 글자, ok, ng, last}로 저장한다.
+   위치는 글자와 그 앞 글자로 다시 찾으므로 '본문 + 요약'과 '요약만' 보기, 기본서에서 같은 표시가 보인다. */
+let mkMode=null, mkStatsOpen=false, mkSort='ng', mkDragging=false, mkSelT=null;
+const MK_LABEL={hl:'🖍 형광펜', 'hl-x':'🧽 형광펜 지우기', cz:'▭ 빈칸뚫기', 'cz-x':'🧽 빈칸 제거'};
+const MK_HELP={hl:'글자를 드래그하면 형광펜이 칠해집니다', 'hl-x':'드래그한 부분의 형광펜을 지웁니다 (형광펜을 눌러도 지워짐)', cz:'드래그한 부분이 빈칸으로 가려집니다', 'cz-x':'드래그한 부분의 빈칸을 없앱니다 (빈칸을 눌러도 없어짐)'};
+const mkList=uid=>(state.marks[uid]=state.marks[uid]||[]);
+function mkToolsHTML(){
+  const on=k=>mkMode===k||mkMode===k+'-x';
+  return `<div class="mk-tools" role="group" aria-label="내 형광펜·빈칸">
+      <button class="chipbtn mk-btn" data-act="mk-mode" data-k="hl" aria-pressed="${on('hl')}" title="왼쪽 클릭: 켜기/끄기 · 오른쪽 클릭(길게 누르기): 지우기 모드">${on('hl')?MK_LABEL[mkMode]:MK_LABEL.hl}</button>
+      <button class="chipbtn mk-btn" data-act="mk-mode" data-k="cz" aria-pressed="${on('cz')}" title="왼쪽 클릭: 켜기/끄기 · 오른쪽 클릭(길게 누르기): 제거 모드">${on('cz')?MK_LABEL[mkMode]:MK_LABEL.cz}</button>
+      <button class="btn sm" data-act="mk-stats" aria-expanded="${mkStatsOpen}">빈칸 통계</button>
+      <button class="btn sm" data-act="mk-hideall">빈칸 다시 가리기</button>
+      <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'버튼을 오른쪽 클릭(폰은 길게 누르기)하면 지우기 모드로 바뀝니다'}</span>
+    </div>
+    <div class="mk-stats-box" ${mkStatsOpen?'':'hidden'}>${mkStatsOpen?mkStatsHTML():''}</div>`;
+}
+function mkRefreshUI(){
+  document.querySelectorAll('.mk-tools').forEach(el=>{ const wrap=document.createElement('div'); wrap.innerHTML=mkToolsHTML(); el.replaceWith(wrap.firstElementChild); });
+  document.querySelectorAll('.mk-stats-box').forEach(el=>{ el.hidden=!mkStatsOpen; el.innerHTML=mkStatsOpen?mkStatsHTML():''; });
+  document.body.classList.toggle('mk-on', !!mkMode); document.body.dataset.mk=mkMode||'';
+  let f=$('#mk-float');
+  if(mkMode && (TAB==='summary'||TAB==='book')){
+    if(!f){ f=document.createElement('div'); f.id='mk-float'; document.body.appendChild(f); }
+    f.innerHTML=`<span>${MK_LABEL[mkMode]} 모드</span><button class="btn sm" data-act="mk-off">끄기</button>`;
+  } else if(f) f.remove();
+}
+/* 단원 영역의 글자 노드 (그림·버튼 안 글자는 제외) */
+function mkNodes(area){
+  const w=document.createTreeWalker(area, NodeFilter.SHOW_TEXT, {acceptNode:n=>n.parentElement.closest('svg,button,script,style,.mk-pop,input,textarea')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});
+  const out=[]; let n; while((n=w.nextNode())) out.push(n); return out;
+}
+function mkFind(text, m){
+  let i=-1, first=-1;
+  while((i=text.indexOf(m.t, i+1))>=0){ if(first<0) first=i; if(!m.pre || text.slice(Math.max(0,i-m.pre.length), i)===m.pre) return i; }
+  return first;
+}
+function mkWrap(area, s, e, m){
+  let acc=0;
+  mkNodes(area).forEach(n=>{
+    const L=n.length, a=acc, b=acc+L; acc=b;
+    if(b<=s || a>=e) return;
+    let node=n, ls=Math.max(0,s-a), le=Math.min(L,e-a);
+    if(le<L) node.splitText(le);
+    if(ls>0) node=node.splitText(ls);
+    if(!node.length || !node.textContent.trim()) return;
+    const sp=document.createElement('span'); sp.className=m.k==='hl'?'uhl':'ucz'; sp.dataset.mid=m.id;
+    node.parentNode.insertBefore(sp,node); sp.appendChild(node);
+  });
+}
+function mkClear(area){
+  area.querySelectorAll('.uhl,.ucz').forEach(sp=>{ const p=sp.parentNode; while(sp.firstChild) p.insertBefore(sp.firstChild, sp); p.removeChild(sp); });
+  area.normalize();
+}
+function mkApplyArea(area){
+  const uid=area.dataset.mu, ms=state.marks[uid]; if(!ms||!ms.length) return;
+  ms.slice().sort((p,q)=>(p.k===q.k?0:p.k==='hl'?-1:1)).forEach(m=>{   // 형광펜을 먼저 칠하고 빈칸을 그 위에 씌운다
+    const text=mkNodes(area).map(n=>n.textContent).join(''), i=mkFind(text,m);
+    if(i>=0) mkWrap(area, i, i+m.t.length, m);
+  });
+}
+function mkApply(root){ (root||document).querySelectorAll('.mk-area').forEach(a=>{ mkClear(a); mkApplyArea(a); }); }
+function mkRedraw(uid){ document.querySelectorAll(`.mk-area[data-mu="${uid}"]`).forEach(a=>{ mkClear(a); mkApplyArea(a); }); }
+/* 드래그한 범위 → 단원 영역 안의 글자 위치 */
+function mkRangeOffsets(area, r){
+  const nodes=mkNodes(area), text=nodes.map(n=>n.textContent).join(''); let acc=0, s=null, e=null;
+  nodes.forEach(n=>{ const L=n.length;
+    if(r.intersectsNode(n)){ const ls=n===r.startContainer?r.startOffset:0, le=n===r.endContainer?r.endOffset:L;
+      if(le>ls){ if(s===null||acc+ls<s) s=acc+ls; if(e===null||acc+le>e) e=acc+le; } }
+    acc+=L; });
+  if(s===null) return null;
+  while(s<e && /\s/.test(text[s])) s++; while(e>s && /\s/.test(text[e-1])) e--;
+  return e>s ? {s, e, text} : null;
+}
+function mkHandleSelection(){
+  if(!mkMode) return;
+  const sel=getSelection(); if(!sel || sel.isCollapsed || !sel.rangeCount) return;
+  const r=sel.getRangeAt(0), start=r.startContainer.nodeType===1?r.startContainer:r.startContainer.parentElement;
+  const area=start && start.closest('.mk-area'); if(!area) return;
+  const o=mkRangeOffsets(area, r); sel.removeAllRanges(); if(!o) return;
+  const uid=area.dataset.mu, kind=mkMode.slice(0,2);
+  if(mkMode.endsWith('-x')){
+    const keep=mkList(uid).filter(m=>{ if(m.k!==kind) return true; const i=mkFind(o.text,m); return i<0 || i+m.t.length<=o.s || i>=o.e; });
+    const n=mkList(uid).length-keep.length; state.marks[uid]=keep;
+    if(n){ save(); mkRedraw(uid); if(mkStatsOpen) mkRefreshUI(); } else toast(kind==='hl'?'드래그한 곳에 형광펜이 없습니다.':'드래그한 곳에 빈칸이 없습니다.', 2200);
+    return;
+  }
+  const t=o.text.slice(o.s,o.e); if(t.length>300){ toast('한 번에 300자까지 표시할 수 있습니다.', 2500); return; }
+  // 같은 종류 표시와 겹치면 하나로 합친다
+  const list=mkList(uid).filter(m=>{ if(m.k!==kind) return true; const i=mkFind(o.text,m); if(i<0) return true; if(i+m.t.length<o.s||i>o.e) return true; o.s=Math.min(o.s,i); o.e=Math.max(o.e,i+m.t.length); return false; });
+  const m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), k:kind, t:o.text.slice(o.s,o.e), pre:o.text.slice(Math.max(0,o.s-24),o.s), ok:0, ng:0, last:null, at:todayStr()};
+  list.push(m); state.marks[uid]=list; save(); mkRedraw(uid); if(mkStatsOpen && kind==='cz') mkRefreshUI();
+}
+/* 빈칸 열기 · O/X 기록 */
+function mkPopClose(){ $('#mk-pop')?.remove(); }
+function mkFindMark(mid){ for(const [uid,l] of Object.entries(state.marks)){ const m=l.find(x=>x.id===mid); if(m) return [uid,m]; } return [null,null]; }
+function mkOpenBlank(sp){
+  const mid=sp.dataset.mid; document.querySelectorAll(`.ucz[data-mid="${mid}"]`).forEach(x=>x.classList.add('open'));
+  mkPopClose(); const [,m]=mkFindMark(mid); if(!m) return;
+  const p=document.createElement('div'); p.id='mk-pop'; p.className='mk-pop'; p.dataset.mid=mid;
+  const tot=m.ok+m.ng;
+  p.innerHTML=`<span class="small">맞혔나요?</span><button class="mk-o" data-act="mk-ox" data-v="o" data-mid="${mid}">O</button><button class="mk-x" data-act="mk-ox" data-v="x" data-mid="${mid}">X</button><span class="small muted">${tot?`${tot}회 · 정답률 ${Math.round(m.ok/tot*100)}%`:'처음'}</span>`;
+  document.body.appendChild(p);
+  const rc=sp.getBoundingClientRect(), pw=p.offsetWidth;
+  p.style.left=Math.max(8, Math.min(innerWidth-pw-8, rc.left+scrollX))+'px'; p.style.top=(rc.bottom+scrollY+6)+'px';
+}
+document.addEventListener('mousedown', e=>{ if(mkMode && e.target.closest && e.target.closest('.mk-area')) mkDragging=true; });
+document.addEventListener('mouseup', ()=>{ if(!mkDragging) return; mkDragging=false; setTimeout(mkHandleSelection, 0); });
+document.addEventListener('touchend', ()=>{ if(mkMode) setTimeout(mkHandleSelection, 350); });
+document.addEventListener('selectionchange', ()=>{   // 폰에서 선택 손잡이로 범위를 조정한 경우
+  if(!mkMode || mkDragging) return; clearTimeout(mkSelT); mkSelT=setTimeout(mkHandleSelection, 900);
+});
+document.addEventListener('contextmenu', e=>{
+  const b=e.target.closest && e.target.closest('[data-act="mk-mode"]'); if(!b) return;
+  e.preventDefault(); const k=b.dataset.k; mkMode = mkMode===k+'-x' ? null : k+'-x'; mkPopClose(); mkRefreshUI();
+});
+document.addEventListener('click', e=>{
+  const t=e.target; if(!t.closest) return;
+  if(!t.closest('#mk-pop') && !t.closest('.ucz')) mkPopClose();
+  const sp=t.closest('.uhl,.ucz'); if(!sp || !getSelection().isCollapsed) return;
+  const mid=sp.dataset.mid, [uid]=mkFindMark(mid);
+  if(sp.classList.contains('uhl') && mkMode==='hl-x'){ state.marks[uid]=mkList(uid).filter(m=>m.id!==mid); save(); mkRedraw(uid); return; }
+  if(!sp.classList.contains('ucz')) return;
+  if(mkMode==='cz-x'){ state.marks[uid]=mkList(uid).filter(m=>m.id!==mid); save(); mkPopClose(); mkRedraw(uid); if(mkStatsOpen) mkRefreshUI(); return; }
+  e.preventDefault();
+  if(sp.classList.contains('open')){ document.querySelectorAll(`.ucz[data-mid="${mid}"]`).forEach(x=>x.classList.remove('open')); mkPopClose(); }
+  else mkOpenBlank(sp);
+});
+/* 빈칸 통계 */
+function mkAllBlanks(){ const out=[]; Object.entries(state.marks).forEach(([uid,l])=>l.forEach(m=>{ if(m.k==='cz') out.push({uid,m}); })); return out; }
+function mkStatsHTML(){
+  const all=mkAllBlanks(), hlN=Object.values(state.marks).reduce((a,l)=>a+l.filter(m=>m.k==='hl').length,0);
+  const tried=all.filter(x=>x.m.ok+x.m.ng), ok=tried.reduce((a,x)=>a+x.m.ok,0), tot=tried.reduce((a,x)=>a+x.m.ok+x.m.ng,0);
+  const rate=x=>{ const n=x.m.ok+x.m.ng; return n?x.m.ng/n:-1; };
+  const sorted=all.slice().sort(mkSort==='ng'?(p,q)=>(rate(q)-rate(p))||(q.m.ng-p.m.ng):mkSort==='ok'?(p,q)=>(q.m.ok-p.m.ok)||(rate(p)-rate(q)):mkSort==='new'?(p,q)=>(q.m.id>p.m.id?1:-1):(p,q)=>ALL_SECS.findIndex(s=>s.id===p.uid)-ALL_SECS.findIndex(s=>s.id===q.uid));
+  const title=uid=>(ALL_SECS.find(s=>s.id===uid)||{}).title||uid;
+  const rows=sorted.map(({uid,m})=>{ const n=m.ok+m.ng, r=n?Math.round(m.ng/n*100):null;
+    return `<tr><td style="white-space:normal;min-width:180px">${esc(m.t.length>60?m.t.slice(0,60)+'…':m.t)}<div class="small muted">${esc(title(uid))}</div></td>
+      <td class="n" style="color:var(--ok)">${m.ok}</td><td class="n" style="color:var(--bad)">${m.ng}</td>
+      <td class="n" style="${r!==null&&r>=50?'color:var(--bad);font-weight:700':''}">${r===null?'−':r+'%'}</td><td class="small muted">${m.last||'−'}</td>
+      <td style="white-space:nowrap"><button class="lnk" data-act="mk-go" data-u="${uid}">보러 가기</button> · <button class="lnk" data-act="mk-del" data-u="${uid}" data-mid="${m.id}">삭제</button></td></tr>`; }).join('');
+  return `<div class="tiles">
+      <div class="tile"><div class="k">만든 빈칸</div><div class="v">${all.length}</div></div>
+      <div class="tile"><div class="k">확인한 횟수</div><div class="v">${tot}</div></div>
+      <div class="tile"><div class="k">정답률</div><div class="v">${tot?Math.round(ok/tot*100)+'%':'−'}</div></div>
+      <div class="tile"><div class="k">내 형광펜</div><div class="v">${hlN}</div></div></div>
+    ${all.length?`<div class="row"><span class="small muted">정렬</span>${[['ng','자주 틀린 순'],['ok','자주 맞힌 순'],['unit','단원 순'],['new','최근 만든 순']].map(([k,l])=>`<button class="chipbtn" data-act="mk-sort" data-v="${k}" aria-pressed="${mkSort===k}">${l}</button>`).join('')}</div>
+      <div class="tbl-wrap"><table><thead><tr><th>빈칸 내용</th><th class="n">O</th><th class="n">X</th><th class="n">오답률</th><th>마지막 확인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="small muted" style="margin:0">빈칸을 눌러 답을 본 뒤 O·X를 고르면 여기에 쌓입니다. 오답률 50% 이상은 빨간색입니다.</p>`
+    :'<div class="empty">아직 만든 빈칸이 없습니다. "빈칸뚫기"를 켜고 본문 글자를 드래그해 보세요.</div>'}`;
+}
+function handleMk(act, a){
+  if(act==='mk-mode'){ const k=a.dataset.k; mkMode = (mkMode===k||mkMode===k+'-x') ? null : k; mkPopClose(); mkRefreshUI(); return; }
+  if(act==='mk-off'){ mkMode=null; mkRefreshUI(); return; }
+  if(act==='mk-stats'){ mkStatsOpen=!mkStatsOpen; mkRefreshUI(); return; }
+  if(act==='mk-sort'){ mkSort=a.dataset.v; mkRefreshUI(); return; }
+  if(act==='mk-hideall'){ document.querySelectorAll('.ucz.open').forEach(x=>x.classList.remove('open')); mkPopClose(); return; }
+  if(act==='mk-ox'){ const [uid,m]=mkFindMark(a.dataset.mid); if(!m) return; if(a.dataset.v==='o') m.ok++; else m.ng++; m.last=todayStr(); save(); mkPopClose(); if(mkStatsOpen) mkRefreshUI();
+    toast(a.dataset.v==='o'?'O로 기록했습니다.':'X로 기록했습니다. 통계의 "자주 틀린 순"에서 다시 볼 수 있어요.', 1800); return; }
+  if(act==='mk-del'){ const uid=a.dataset.u; state.marks[uid]=mkList(uid).filter(m=>m.id!==a.dataset.mid); save(); mkRedraw(uid); mkRefreshUI(); return; }
+  if(act==='mk-go'){ const uid=a.dataset.u, sec=ALL_SECS.find(s=>s.id===uid); if(!sec) return;
+    if(TAB==='book'){ handleBook('book-go', {dataset:{u:uid}}); return; }
+    sumSubj=sec.subj; sumQ=''; sumTarget=uid; if(TAB==='summary') renderSummary(); else location.hash='summary'; return; }
 }
 
 /* ===================== 기본서 (처음부터 끝까지 읽기) ===================== */
@@ -3906,9 +4096,9 @@ function chapterHTML(subj, u, i, solo){
   const rd=!!state.read[u.id], hasQ=QB.some(q=>q.u===u.id);
   return `<section class="chapter${solo?' solo':''}" id="bk-${u.id}" data-u="${u.id}">
     <div class="stack" style="gap:4px"><span class="eyebrow">${i+1}장 · 플랜 단원 ${u.t}</span><h3>${u.title}</h3><span class="small muted">출제 중요도 ${stars(u.id)}</span></div>
-    ${abbrUnit(`${BODY[u.id]?bodyHTML(u.id):''}
+    <div class="mk-area" data-mu="${u.id}">${abbrUnit(`${BODY[u.id]?bodyHTML(u.id):''}
     <div class="keybox"><div class="lab">핵심 정리</div>${sumPartsHTML(u)}</div>
-    ${oxHTML(u.id)}`)}
+    ${oxHTML(u.id)}`)}</div>
     <div class="row between">
       <button class="chipbtn" data-act="book-read" data-u="${u.id}" aria-pressed="${rd}">${rd?'다 읽음 ✓':'이 장 다 읽음'}</button>
       ${hasQ?`<button class="btn sm" data-act="qz-study-unit" data-u="${u.id}">이 장 문제 학습</button>`:''}
@@ -3981,9 +4171,10 @@ function renderBook(){
         <div class="chips" role="group" aria-label="글자 크기">${['s','m','l'].map(k=>`<button class="chipbtn" data-act="book-fs" data-k="${k}" aria-pressed="${bookFs===k}">${{s:'작게',m:'보통',l:'크게'}[k]}</button>`).join('')}</div>
       </div>
       <div class="row between">
-        <span class="small muted"><mark>형광펜</mark> = 시험에 자주 나오는 숫자·문장 · ${stars('in1')} = 출제 중요도(예상) · O/X = 시험에 나오는 문장</span>
-        <div class="row"><button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">형광펜 ${hlOn?'켜짐':'꺼짐'}</button><button class="btn sm" data-act="pr-open" data-k="book" aria-expanded="false">🖨 인쇄</button></div>
+        <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ${stars('in1')} = 출제 중요도(예상) · O/X = 시험에 나오는 문장</span>
+        <div class="row"><button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button><button class="btn sm" data-act="pr-open" data-k="book" aria-expanded="false">🖨 인쇄</button></div>
       </div>
+      ${mkToolsHTML()}
       ${printPanelHTML('book')}
       <div class="chips" role="tablist" aria-label="편 선택">
         <button class="chipbtn" data-act="book-part" data-p="guide" aria-pressed="${bookPart==='guide'}">들어가며</button>
@@ -3999,6 +4190,7 @@ function renderBook(){
       <details class="toc"><summary class="btn">전체 목차 펼치기</summary><ol class="toc-list">${toc}</ol></details>
     </div>
     <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():partHTML(bookPart, bookUnit)}</article>`;
+  mkApply($('#book-art')); mkRefreshUI();
   observeBook();
   if(bookTarget){ const t=document.getElementById('bk-'+bookTarget); bookTarget=null; if(t) t.scrollIntoView({block:'start'}); }
 }
@@ -4039,7 +4231,7 @@ function handleBook(act, a){
   }
   if(act==='book-hl'){
     hlOn=!hlOn; try{ localStorage.setItem('afpk95-hl', hlOn?'1':'0'); }catch(_){}
-    applyHlClass(); a.setAttribute('aria-pressed', hlOn); a.textContent=`형광펜 ${hlOn?'켜짐':'꺼짐'}`; return;
+    applyHlClass(); a.setAttribute('aria-pressed', hlOn); a.textContent=`출제 포인트 ${hlOn?'켜짐':'꺼짐'}`; return;
   }
   if(act==='book-read'){
     const id=a.dataset.u; if(state.read[id]) delete state.read[id]; else state.read[id]=true; save();
@@ -6814,7 +7006,7 @@ function runPrint(how, title, html){ if(how==='file') savePrintFile(title, html)
 function printBookHTML(ids){
   const cover = ids.length>1 ? `<section class="pr-page pr-cover"><div class="round">제95회 AFPK 대비</div><h1>AFPK 기본서</h1><div class="kind">전 과목 ${ids.length}편</div>
     <table><thead><tr><th>편</th><th>과목</th><th>문항</th><th>장</th></tr></thead><tbody>${ids.map(id=>`<tr><td>제${partNo(id)}편</td><td>${SUBJ_BY[id].name}</td><td>${SUBJ_BY[id].q}</td><td>${SUMMARY[id].length}</td></tr>`).join('')}</tbody></table>
-    <div class="fine">형광펜 = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상) · 수치는 2026년 10월 현행 기준</div></section>` : '';
+    <div class="fine">출제 포인트 = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상) · 수치는 2026년 10월 현행 기준</div></section>` : '';
   return cover + ids.map(subj=>{ const s=SUBJ_BY[subj];
     return `<section class="pr-page"><article class="book">
       <header class="part-head"><span class="eyebrow">제${partNo(subj)}편 · 모듈${s.mod}</span><h2>${s.name}</h2><span class="small muted">${s.q}문항 · ${failTxt(s)} · 목표 ${s.target}개 · ${SUMMARY[subj].length}장</span></header>
@@ -6840,7 +7032,7 @@ function printPanelHTML(kind){
       ${kind==='sum'?`<label class="f">내용<select id="pr-sum-mode"><option value="full" ${sumMode==='full'?'selected':''}>본문 + 요약</option><option value="sum" ${sumMode==='sum'?'selected':''}>요약만 (복습용, 페이지 적음)</option></select></label>`:''}
     </div>
     <div class="row"><button class="btn pri" data-act="pr-go" data-k="${kind}" data-how="print">인쇄</button><button class="btn" data-act="pr-go" data-k="${kind}" data-how="file">인쇄용 파일 저장</button></div>
-    <span class="small muted">A4 세로 · 형광펜 ${hlOn?'포함':'제외'}(형광펜 버튼으로 바꿀 수 있음) · 인쇄창에서 프린터를 고르거나 "PDF로 저장"을 고르면 됩니다. 형광펜과 표 음영을 살리려면 인쇄 설정의 "배경 그래픽"을 켜세요.</span>
+    <span class="small muted">A4 세로 · 출제 포인트 ${hlOn?'포함':'제외'}(출제 포인트 버튼으로 바꿀 수 있음) · 인쇄창에서 프린터를 고르거나 "PDF로 저장"을 고르면 됩니다. 형광펜과 표 음영을 살리려면 인쇄 설정의 "배경 그래픽"을 켜세요.</span>
   </div>`;
 }
 
@@ -8285,6 +8477,7 @@ document.addEventListener('click', e=>{
   else if(act.startsWith('pr-')) handlePrint(act, a);
   else if(act.startsWith('cz-')) handleCloze(act, a);
   else if(act.startsWith('book-')) handleBook(act, a);
+  else if(act.startsWith('mk-')) handleMk(act, a);
   else if(act.startsWith('qz-')) handleQuiz(act, a);
   else if(act==='flip'){ cf.flip=!cf.flip; renderCards(); }
   else if(act==='c-next'||act==='c-prev'){ const n=cardPool().length||1; cf.idx=(cf.idx+(act==='c-next'?1:n-1))%n; cf.flip=false; renderCards(); }
