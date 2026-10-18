@@ -485,6 +485,10 @@ kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);bo
 .myq-l textarea{resize:vertical}
 .myq-opt{display:grid;grid-template-columns:22px 22px 1fr;align-items:center;gap:6px}
 .myq-opt input[type=radio]{width:18px;height:18px;accent-color:var(--ok)}
+.qm{display:inline-flex;gap:6px;align-items:center;margin-left:4px;white-space:nowrap}
+.qm-imp{color:var(--warn);font-size:.8rem;letter-spacing:-1px} .qm-imp .dim{opacity:.25}
+.qm-d{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid currentColor}
+.qm-d.d0{color:var(--ok)} .qm-d.d1{color:var(--accent)} .qm-d.d2{color:var(--bad)}
 .pill.kind{background:var(--accent-soft);color:var(--accent);font-size:.74rem;font-weight:700}
 .pred-list{display:flex;flex-direction:column;gap:6px}
 .pred-row{display:grid;grid-template-columns:38px 1fr 48px 78px;gap:8px;align-items:center}
@@ -6974,9 +6978,52 @@ function kindCardHTML(){
   const c={}; QB.forEach(q=>{ const k=qKind(q); if(k) c[k]=(c[k]||0)+1; });
   return `<div class="card stack"><div class="sec-head"><h2>유형별 연습</h2><span class="small muted">시험에 나오는 문제 모양별로 20문제씩</span></div>
     <div class="chips">${Object.entries(KIND_LABEL).filter(([k])=>c[k]).map(([k,l])=>`<button class="chipbtn" data-act="kd-run" data-k="${k}">${l} <span class="num" style="opacity:.7">${c[k]}</span></button>`).join('')}</div>
+    <div class="row"><span class="small muted">중요도·난이도로</span><button class="chipbtn" data-act="qm-run" data-f="imp3">★★★ 중요한 것만</button><button class="chipbtn" data-act="qm-run" data-f="imp3d0">★★★ 중 쉬운 것부터</button><button class="chipbtn" data-act="qm-run" data-f="d2">난이도 상만</button><button class="chipbtn" data-act="qm-run" data-f="d0">난이도 하만</button></div>
     <p class="small muted" style="margin:0">사례형 = 상황을 읽고 판단(문제해결형), 부정형 = 옳지 않은 것 고르기, 묶음형 = 가~라 중 맞는 것 모두, 연결형·순서형·빈칸형 = 시험지 형식 문제.</p></div>`;
 }
+/* ---- 문제별 중요도(★1~3)·난이도(하·중·상) ----
+   중요도: 그 단원이 실제 시험에 나올 예상 문항 수(공식 장별 출제 비중), 공식 학습 중요도(IMP), 출제 포인트(HL) 문구,
+           장별 '학습 중요도 3' 주제어를 점수로 합쳐 전체 문제 중 상위 30% ★★★, 중간 45% ★★, 하위 25% ★.
+   난이도: 문제 모양(계산·묶음·연결·순서·사례·부정형)과 읽을 양으로 점수를 매겨 하위 35% 하, 중간 45% 중, 상위 20% 상.
+           내 풀이 기록이 2회 이상 쌓이면 맞힌 비율로 한 단계 올리거나 내린다. */
+let QM_CACHE=null, QM_N=0;
+function qmText(q){ return [q.q, ...(q.c||[]), q.e||'', q.box?(q.box.text||(q.box.items||[]).map(x=>x[1]).join(' ')||[...(q.box.left||[]),...(q.box.right||[])].join(' ')):''].join(' '); }
+function qmScores(q){
+  const text=qmText(q), sid=q.s, us=SUMMARY[sid]||[], tw=us.reduce((a,u)=>a+(UNIT_W[u.id]||0),0);
+  const exp=tw ? SUBJ_BY[sid].q*(UNIT_W[q.u]||0)/tw : 1;            // 이 단원에서 시험에 나올 예상 문항 수
+  const hit=(HL[q.u]||[]).some(h=>{ const t=String(h).replace(/[()（）"“”]/g,'').trim(); return t.length>=4 && text.includes(t.slice(0, Math.min(t.length, 10))); });
+  let top=0; (EXAM_W[sid]||[]).forEach(c=>{ if(!c[4].some(([u])=>u===q.u)) return; (c[8]||[]).forEach(([t,lv])=>{ if(lv>=3 && String(t).split(/[·\s,와과의]+/).filter(w=>w.length>=2).some(w=>text.includes(w))) top=1; }); });
+  const imp=Math.log1p(exp)*1.2 + (IMP[q.u]||2)*0.5 + (hit?1:0) + top*0.6;
+  const k=qKind(q); let d={calc:2.2, combo:2, match:1.6, seq:1.2, fill:1.2, case:1.2, neg:1, num:0.6}[k]||0;
+  const len=[q.q, ...(q.c||[]), q.box&&q.box.text||''].join('').length; d+=Math.min(2, len/180);
+  const avg=(q.c||[]).reduce((a,c)=>a+String(c).length,0)/4; if(avg>28) d+=0.5;
+  if(q.box && q.box.kind==='list' && q.box.items.length>=4) d+=0.3;
+  return {imp, d, hit};
+}
+function qmBuild(){
+  const rows=QB.map(q=>({q, ...qmScores(q)}));
+  const cut=(arr, ps)=>{ const v=arr.slice().sort((a,b)=>a-b); return ps.map(p=>v[Math.min(v.length-1, Math.floor(v.length*p))]); };
+  const [i1,i2]=cut(rows.map(r=>r.imp), [0.25, 0.70]), [d1,d2]=cut(rows.map(r=>r.d), [0.35, 0.80]);
+  QM_CACHE={}; rows.forEach(r=>{ QM_CACHE[r.q.id]={imp:r.imp<i1?1:r.imp<i2?2:3, d:r.d<d1?0:r.d<d2?1:2, hit:r.hit}; });
+  QM_CACHE._cut={i1,i2,d1,d2}; QM_N=QB.length;
+}
+function qMetaBase(q){
+  if(!QM_CACHE || QM_N!==QB.length) qmBuild();
+  if(!QM_CACHE[q.id]){ const s=qmScores(q), c=QM_CACHE._cut; QM_CACHE[q.id]={imp:s.imp<c.i1?1:s.imp<c.i2?2:3, d:s.d<c.d1?0:s.d<c.d2?1:2, hit:s.hit}; }
+  return QM_CACHE[q.id];
+}
+const DIFF_LABEL=['하','중','상'];
+function qMeta(q){
+  const b=qMetaBase(q), st=qStat(q.id); let d=b.d, mine=false;
+  if(st[0]>=2){ const acc=st[1]/st[0]; if(acc<=0.34 && d<2){ d++; mine=true; } else if(acc===1 && st[0]>=3 && d>0){ d--; mine=true; } }
+  return {imp:b.imp, d, mine, hit:b.hit};
+}
+function qMetaHTML(q){
+  if(!q || !q.u || !QB_BY[q.id]) return ''; const m=qMeta(q);
+  return `<span class="qm" title="중요도: 단원 출제 비중·학습 중요도${m.hit?'·출제 포인트 문구':''} 기준 · 난이도: 문제 모양과 읽을 양${m.mine?' + 내 풀이 기록':''} 기준"><span class="qm-imp" aria-label="중요도 ${m.imp}">${'★'.repeat(m.imp)}<span class="dim">${'★'.repeat(3-m.imp)}</span></span><span class="qm-d d${m.d}">난이도 ${DIFF_LABEL[m.d]}${m.mine?' · 내 기록':''}</span></span>`;
+}
 function feat3Act(act, a){
+  if(act==='qm-run'){ const f=a.dataset.f, qs=QB.filter(q=>{ const m=qMeta(q); return f==='imp3'?m.imp===3:f==='d2'?m.d===2:f==='d0'?m.d===0:f==='imp3d0'?m.imp===3&&m.d<=1:false; }); if(qs.length) startQuiz('practice', {imp3:'중요도 ★★★', d2:'난이도 상', d0:'난이도 하', imp3d0:'중요도 ★★★ · 쉬운 것부터'}[f], shuffleArr(qs).slice(0,20)); return true; }
   if(act==='kd-run'){ const k=a.dataset.k, qs=QB.filter(q=>qKind(q)===k); if(qs.length) startQuiz('practice', `유형별 · ${KIND_LABEL[k]}`, shuffleArr(qs).slice(0,20)); return true; }
   if(act==='rx-toggle'){ rxOn=!rxOn; try{ localStorage.setItem('afpk95-rx', rxOn?'1':'0'); }catch(e){} mkRefreshUI(); toast(rxOn?'틀린 문제의 관련 본문에 자동으로 형광펜을 칠합니다.':'오답 자동 형광펜을 껐습니다.', 2500); return true; }
   if(act==='rx-clear'){ let n=0; Object.keys(state.marks).forEach(u=>{ const L=state.marks[u], k=L.filter(m=>!m.auto); n+=L.length-k.length; state.marks[u]=k; }); save(); mkApply(); mkRefreshUI(); toast(`자동으로 칠한 표시 ${n}개를 지웠습니다.`, 2500); return true; }
@@ -8886,7 +8933,7 @@ function studyRunHTML(){
     </div>
     <div class="progress"><div style="width:${(qz.idx+1)/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
-      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u.title}</span> ${kindPill(q)}${myBadge(q.id)}</span>${neg?'<span class="pill warn">틀린 것을 고르는 문제</span>':''}</div>
+      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u.title}</span> ${kindPill(q)}${qMetaHTML(q)}${myBadge(q.id)}</span>${neg?'<span class="pill warn">틀린 것을 고르는 문제</span>':''}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${opts}</div>
       ${panels}
@@ -9024,7 +9071,7 @@ function quizRunHTML(){
     </div>
     <div class="progress"><div style="width:${(qz.idx+1)/N*100}%;background:var(--accent)"></div></div>
     <div class="card stack">
-      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u?u.title:''}</span> ${kindPill(q)}${myBadge(q.id)}</span>
+      <div class="row between"><span class="small">${chip(q.s)} <span class="muted">${u?u.title:''}</span> ${kindPill(q)}${qMetaHTML(q)}${myBadge(q.id)}</span>
         ${mock?'':`<button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${u?esc(u.t):''}">본문 보기</button>`}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${it.o.map((orig,k)=>choiceHTML(it,q,k,orig,chosen,shown)).join('')}</div>
@@ -9995,7 +10042,7 @@ function paperResultHTML(){
   // 해설
   const show=res.filter(r=>qzResView==='all'||!r.ok);
   const explFn=i=>{ const r=res[i], note=QNOTE[r.q.id]||['',''], u=unitOf(r.q);
-    return abbrUnit(`<div class="expl"><div><span class="lab" style="color:${r.ok?'var(--ok)':'var(--bad)'}">${r.ok?'정답':r.ch===undefined?'무응답':'오답'}</span> · 정답 ${MARK[r.it.o.indexOf(r.q.a)]}${r.ok||r.ch===undefined?'':` · 내 답 ${MARK[r.it.o.indexOf(r.ch)]}`}</div>
+    return abbrUnit(`<div class="expl"><div><span class="lab" style="color:${r.ok?'var(--ok)':'var(--bad)'}">${r.ok?'정답':r.ch===undefined?'무응답':'오답'}</span> ${qMetaHTML(r.q)} · 정답 ${MARK[r.it.o.indexOf(r.q.a)]}${r.ok||r.ch===undefined?'':` · 내 답 ${MARK[r.it.o.indexOf(r.ch)]}`}</div>
       <div>${esc(r.q.e)}</div>${note[1]?`<div><span class="lab" style="color:var(--warn)">함정</span> · ${esc(note[1])}</div>`:''}
       <div class="small"><span class="lab">필요한 개념</span> · ${esc(note[0]||'')} <span class="muted">(${u?u.title:''})</span> · <button class="lnk" data-act="sum-go" data-subj="${r.q.s}" data-topic="${u?esc(u.t):''}">본문</button>${qz.sec&&qz.sec[r.q.id]!==undefined?` · <span class="muted">소요 약 ${Math.round(qz.sec[r.q.id])}초</span>`:''}</div>
       ${r.ok?'':whyChipsHTML(r.q.id)}</div>`) + (r.ok?'':rxNoteHTML(r.q)) + qMemoHTML(r.q.id); };
