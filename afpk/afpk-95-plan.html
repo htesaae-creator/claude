@@ -426,6 +426,36 @@ body[data-mk="hl-x"] .uhl, body[data-mk="cz-x"] .ucz{cursor:not-allowed;outline:
 .mk-o{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)} .mk-x{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
 #mk-float{position:fixed;right:12px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 .mk-fb{font:inherit;font-size:.9rem;font-weight:700;min-height:44px;padding:0 16px;border-radius:999px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);-webkit-user-select:none;user-select:none;white-space:nowrap}
+.unt{border-bottom:2px dotted var(--accent);cursor:pointer}
+.unt-end::after{content:"📝";font-size:.72em;margin-left:1px;vertical-align:super;line-height:0}
+.mk-pop.mk-note{flex-direction:column;align-items:stretch;width:min(340px,calc(100vw - 16px));gap:6px}
+.mk-pop.mk-note textarea,.qmemo textarea{font:inherit;width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);resize:vertical}
+.mk-note-t{white-space:pre-wrap;line-height:1.55}
+.mk-notes-box{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.qmemo{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.qmemo-t{white-space:pre-wrap;background:var(--accent-soft);border-radius:8px;padding:8px 10px;align-self:stretch}
+.mk-blank{display:inline-block;min-width:3em;border-bottom:2px solid var(--accent);background:var(--czbg);border-radius:4px 4px 0 0;margin:0 2px}
+mark.mk-ans{background:var(--uhl);color:inherit;padding:0 3px;border-radius:3px;font-weight:700}
+.rv-steps{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.rv-step{font:inherit;display:flex;align-items:center;gap:8px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer}
+.rv-step:hover:not(:disabled){border-color:var(--accent)} .rv-step:disabled{opacity:.5;cursor:default}
+.rv-step .rv-no{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;background:var(--line2)}
+.rv-step .rv-t{flex:1;min-width:0} .rv-step.done{border-color:var(--ok)} .rv-step.done .rv-no{background:var(--ok);color:#fff}
+.rs-list{display:flex;flex-direction:column}
+.rs-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line2)} .rs-row:first-child{border-top:0;padding-top:0}
+.body-text > h4,.sum-label,.keybox > .lab{scroll-margin-top:72px}
+#toc-fab{position:fixed;z-index:19;font:inherit;font-size:.9rem;font-weight:700;min-height:44px;padding:0 16px;border-radius:999px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);bottom:16px}
+#toc-fab[data-side="right"]{right:12px} #toc-fab[data-side="left"]{left:12px}
+#toc-fab[aria-expanded="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+#toc-panel{position:fixed;z-index:21;top:calc(env(safe-area-inset-top,0px) + 64px);width:min(300px,calc(100vw - 24px));display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.22);overflow:hidden}
+#toc-panel[hidden]{display:none!important}
+#toc-panel[data-side="right"]{right:12px} #toc-panel[data-side="left"]{left:12px}
+.toc-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.toc-list{overflow-y:auto;padding:4px;display:flex;flex-direction:column;overscroll-behavior:contain}
+.toc-u,.toc-h{font:inherit;text-align:left;background:none;border:0;color:var(--ink);cursor:pointer;border-radius:6px;line-height:1.4}
+.toc-u{font-weight:700;padding:8px 8px 4px;margin-top:4px} .toc-h{padding:5px 8px 5px 18px;font-size:.88rem;color:var(--muted)}
+.toc-u:hover,.toc-h:hover{background:var(--line2)} .toc-u.cur,.toc-h.cur{background:var(--accent-soft);color:var(--accent);font-weight:700}
+@media print{#toc-fab,#toc-panel,.mk-notes-box,.qmemo{display:none!important}}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -5183,7 +5213,7 @@ function defaultState(){
   return {v:1, settings:{start: t>'2026-10-12'?t:'2026-10-12', exam:EXAM.date, wd:2, we:5,
     prof:Object.fromEntries(SUBJ.map(s=>[s.id,s.prof]))},
     checklist:{}, done:{}, mocks:[], cards:{known:{}, custom:[], sr:{}}, read:{}, qs:{}, wrong:{}, studied:{}, bookmark:null,
-    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, updated:''};
+    sr:{}, why:{}, calc:{}, cz:{}, marks:{}, qmemo:{}, rv:{d:'',s:[]}, updated:''};
 }
 function normalize(d){
   const s=defaultState(); if(!d||typeof d!=='object') return s;
@@ -5200,6 +5230,8 @@ function normalize(d){
     wrong:{...(d.wrong||{})},
     studied:{...(d.studied||{})},
     bookmark:typeof d.bookmark==='string'?d.bookmark:null,
+    qmemo:Object.fromEntries(Object.entries(d.qmemo||{}).filter(([k,v])=>typeof v==='string'&&v)),
+    rv:d.rv&&typeof d.rv.d==='string'&&Array.isArray(d.rv.s)?{d:d.rv.d, s:d.rv.s.slice()}:{d:'',s:[]},
     marks:Object.fromEntries(Object.entries(d.marks||{}).map(([k,v])=>[k, Array.isArray(v)?v.filter(m=>m&&typeof m.t==='string'&&m.t).map(m=>({...m, ok:m.ok|0, ng:m.ng|0})):[]])),
     updated:d.updated||''};
 }
@@ -5408,13 +5440,9 @@ function renderToday(){
       <div class="tile"><div class="k">밀린 날</div><div class="v" style="${over?'color:var(--warn)':''}">${over}일</div></div>
     </div>
     ${P.total?`<div class="progress" aria-label="학습 진행률"><div style="width:${Math.min(100,doneH/P.total*100)}%"></div></div>`:''}
+    ${resumeCardHTML()}
     ${todayCard}
     ${reviewCardHTML()}
-    ${(()=>{ const bm=ALL_SECS.find(s=>s.id===state.bookmark); const rn=readCount(ALL_SECS);
-      return `<div class="card row between"><div class="stack" style="gap:2px"><span class="eyebrow">기본서</span>
-        <span>${bm?`제${partNo(bm.subj)}편 ${SUBJ_BY[bm.subj].name} · ${unitNo(bm.subj,bm.id)}장 ${bm.title}`:'아직 읽기 시작하지 않았습니다'}</span>
-        <span class="small muted">다 읽은 장 ${rn}/${ALL_SECS.length}</span></div>
-        <button class="btn ${bm?'pri':''}" data-act="${bm?'book-resume':'book-part'}" data-p="guide">${bm?'이어 읽기':'처음부터 읽기'}</button></div>`; })()}
     ${mockCard}
     <div class="card stack"><div class="sec-head"><h2>시험 준비 체크리스트</h2><span class="muted small num">${clDone}/${CHECKLIST.length}</span></div>
       <div class="cl">${cl}</div>
@@ -5831,7 +5859,7 @@ function renderSumList(){
     el.innerHTML = `<div class="row between"><h2>${s.name}</h2><span class="small muted">${s.q}문항 · ${failTxt(s)} · 목표 ${s.target}개</span></div>` +
       SUMMARY[sumSubj].map(x=>secHTML({...x, subj:sumSubj},false)).join('');
   }
-  mkApply(el);
+  mkApply(el); tocBuild();
   if(sumTarget){ const t=document.getElementById('sec-'+sumTarget); sumTarget=null; if(t) t.scrollIntoView({block:'start'}); }
 }
 
@@ -5839,21 +5867,24 @@ function renderSumList(){
    표시는 state.marks[단원]에 {id, k:'hl'|'cz', t:고른 글자, pre:바로 앞 글자, ok, ng, last}로 저장한다.
    위치는 글자와 그 앞 글자로 다시 찾으므로 '본문 + 요약'과 '요약만' 보기, 기본서에서 같은 표시가 보인다. */
 let mkMode=null, mkStatsOpen=false, mkSort='ng', mkDragging=false, mkSelT=null;
-const MK_LABEL={hl:'🖍 형광펜', 'hl-x':'🧽 형광펜 지우기', cz:'▭ 빈칸뚫기', 'cz-x':'🧽 빈칸 제거'};
-const MK_HELP={hl:'글자를 드래그하면 형광펜이 칠해집니다', 'hl-x':'드래그한 부분의 형광펜을 지웁니다 (형광펜을 눌러도 지워짐)', cz:'드래그한 부분이 빈칸으로 가려집니다', 'cz-x':'드래그한 부분의 빈칸을 없앱니다 (빈칸을 눌러도 없어짐)'};
+const MK_LABEL={hl:'🖍 형광펜', 'hl-x':'🧽 형광펜 지우기', cz:'▭ 빈칸뚫기', 'cz-x':'🧽 빈칸 제거', nt:'📝 메모 달기'};
+const MK_HELP={nt:'글자를 드래그하면 그 부분에 메모를 달 수 있습니다 (밑줄을 누르면 메모가 보임)', hl:'글자를 드래그하면 형광펜이 칠해집니다', 'hl-x':'드래그한 부분의 형광펜을 지웁니다 (형광펜을 눌러도 지워짐)', cz:'드래그한 부분이 빈칸으로 가려집니다', 'cz-x':'드래그한 부분의 빈칸을 없앱니다 (빈칸을 눌러도 없어짐)'};
 const mkList=uid=>(state.marks[uid]=state.marks[uid]||[]);
 function mkToolsHTML(){
   const on=k=>mkMode===k||mkMode===k+'-x';
   return `<div class="mk-tools" role="group" aria-label="내 형광펜·빈칸">
       <button class="btn sm" data-act="mk-stats" aria-expanded="${mkStatsOpen}">빈칸 통계</button>
       <button class="btn sm" data-act="mk-hideall">빈칸 다시 가리기</button>
-      <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'오른쪽 아래 🖍 형광펜 · ▭ 빈칸 버튼을 누를 때마다 칠하기(만들기) → 지우기(제거) → 끄기 순서로 바뀝니다'}</span>
+      <button class="btn sm" data-act="mk-notes" aria-expanded="${mkNotesOpen}">내 메모 ${mkNoteCount()}</button>
+      <span class="small muted mk-help">${mkMode?MK_HELP[mkMode]:'오른쪽 아래 🖍 형광펜 · ▭ 빈칸 버튼은 누를 때마다 칠하기(만들기) → 지우기(제거) → 끄기, 📝 메모는 켜기 ↔ 끄기'}</span>
     </div>
-    <div class="mk-stats-box" ${mkStatsOpen?'':'hidden'}>${mkStatsOpen?mkStatsHTML():''}</div>`;
+    <div class="mk-stats-box" ${mkStatsOpen?'':'hidden'}>${mkStatsOpen?mkStatsHTML():''}</div>
+    <div class="mk-notes-box" ${mkNotesOpen?'':'hidden'}>${mkNotesOpen?mkNotesHTML():''}</div>`;
 }
 function mkRefreshUI(){
   document.querySelectorAll('.mk-tools').forEach(el=>{ const wrap=document.createElement('div'); wrap.innerHTML=mkToolsHTML(); el.replaceWith(wrap.firstElementChild); });
   document.querySelectorAll('.mk-stats-box').forEach(el=>{ el.hidden=!mkStatsOpen; el.innerHTML=mkStatsOpen?mkStatsHTML():''; });
+  mkNotesRefresh();
   document.body.classList.toggle('mk-on', !!mkMode); document.body.dataset.mk=mkMode||'';
   let f=$('#mk-float');
   if(!f){ f=document.createElement('div'); f.id='mk-float'; f.setAttribute('role','group'); f.setAttribute('aria-label','빠른 도구'); document.body.appendChild(f); }
@@ -5861,9 +5892,10 @@ function mkRefreshUI(){
   const nav=`<div class="fl-row"><button class="fl-ic" data-act="fl-theme" title="${dark?'라이트 모드로':'다크 모드로'}" aria-label="${dark?'라이트 모드로 바꾸기':'다크 모드로 바꾸기'}">${dark?'☀':'☾'}</button><button class="fl-ic" data-act="fl-top" title="맨 위로" aria-label="맨 위로">↑</button><button class="fl-ic" data-act="fl-bottom" title="맨 아래로" aria-label="맨 아래로">↓</button></div>`;
   if(TAB==='summary'||TAB==='book'){
     const st=k=>mkMode===k?'on':mkMode===k+'-x'?'x':'off';
-    const lab={hl:{off:'🖍 형광펜',on:'🖍 칠하기',x:'🧽 형광펜 지우기'}, cz:{off:'▭ 빈칸',on:'▭ 빈칸 만들기',x:'🧽 빈칸 제거'}};
-    f.innerHTML=['hl','cz'].map(k=>`<button class="mk-fb" data-act="mk-cycle" data-k="${k}" data-st="${st(k)}" aria-pressed="${st(k)!=='off'}" title="누를 때마다 ${k==='hl'?'칠하기 → 지우기':'만들기 → 제거'} → 끄기">${lab[k][st(k)]}</button>`).join('')+nav;
+    const lab={nt:{off:'📝 메모',on:'📝 메모 달기',x:''}, hl:{off:'🖍 형광펜',on:'🖍 칠하기',x:'🧽 형광펜 지우기'}, cz:{off:'▭ 빈칸',on:'▭ 빈칸 만들기',x:'🧽 빈칸 제거'}};
+    f.innerHTML=['nt','hl','cz'].map(k=>`<button class="mk-fb" data-act="mk-cycle" data-k="${k}" data-st="${st(k)}" aria-pressed="${st(k)!=='off'}" title="${k==='nt'?'누를 때마다 메모 달기 ↔ 끄기':`누를 때마다 ${k==='hl'?'칠하기 → 지우기':'만들기 → 제거'} → 끄기`}">${lab[k][st(k)]}</button>`).join('')+nav;
   } else f.innerHTML=nav;
+  tocBuild();
 }
 /* 단원 영역의 글자 노드 (그림·버튼 안 글자는 제외) */
 function mkNodes(area){
@@ -5884,19 +5916,19 @@ function mkWrap(area, s, e, m){
     if(le<L) node.splitText(le);
     if(ls>0) node=node.splitText(ls);
     if(!node.length || !node.textContent.trim()) return;
-    const sp=document.createElement('span'); sp.className=m.k==='hl'?'uhl':'ucz'; sp.dataset.mid=m.id;
+    const sp=document.createElement('span'); sp.className={hl:'uhl',cz:'ucz',nt:'unt'}[m.k]||'uhl'; sp.dataset.mid=m.id;
     node.parentNode.insertBefore(sp,node); sp.appendChild(node);
   });
 }
 function mkClear(area){
-  area.querySelectorAll('.uhl,.ucz').forEach(sp=>{ const p=sp.parentNode; while(sp.firstChild) p.insertBefore(sp.firstChild, sp); p.removeChild(sp); });
+  area.querySelectorAll('.uhl,.ucz,.unt').forEach(sp=>{ const p=sp.parentNode; while(sp.firstChild) p.insertBefore(sp.firstChild, sp); p.removeChild(sp); });
   area.normalize();
 }
 function mkApplyArea(area){
   const uid=area.dataset.mu, ms=state.marks[uid]; if(!ms||!ms.length) return;
-  ms.slice().sort((p,q)=>(p.k===q.k?0:p.k==='hl'?-1:1)).forEach(m=>{   // 형광펜을 먼저 칠하고 빈칸을 그 위에 씌운다
+  const KO={hl:0,nt:1,cz:2}; ms.slice().sort((p,q)=>(KO[p.k]||0)-(KO[q.k]||0)).forEach(m=>{   // 형광펜 → 메모 → 빈칸 순서로 씌운다
     const text=mkNodes(area).map(n=>n.textContent).join(''), i=mkFind(text,m);
-    if(i>=0) mkWrap(area, i, i+m.t.length, m);
+    if(i>=0){ mkWrap(area, i, i+m.t.length, m); if(m.k==='nt'){ const sps=area.querySelectorAll(`.unt[data-mid="${m.id}"]`); if(sps.length) sps[sps.length-1].classList.add('unt-end'); } }
   });
 }
 function mkApply(root){ (root||document).querySelectorAll('.mk-area').forEach(a=>{ mkClear(a); mkApplyArea(a); }); }
@@ -5927,9 +5959,10 @@ function mkHandleSelection(){
   }
   const t=o.text.slice(o.s,o.e); if(t.length>300){ toast('한 번에 300자까지 표시할 수 있습니다.', 2500); return; }
   // 같은 종류 표시와 겹치면 하나로 합친다
-  const list=mkList(uid).filter(m=>{ if(m.k!==kind) return true; const i=mkFind(o.text,m); if(i<0) return true; if(i+m.t.length<o.s||i>o.e) return true; o.s=Math.min(o.s,i); o.e=Math.max(o.e,i+m.t.length); return false; });
+  const list=mkList(uid).filter(m=>{ if(m.k!==kind||kind==='nt') return true; const i=mkFind(o.text,m); if(i<0) return true; if(i+m.t.length<o.s||i>o.e) return true; o.s=Math.min(o.s,i); o.e=Math.max(o.e,i+m.t.length); return false; });
   const m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), k:kind, t:o.text.slice(o.s,o.e), pre:o.text.slice(Math.max(0,o.s-24),o.s), ok:0, ng:0, last:null, at:todayStr()};
-  list.push(m); state.marks[uid]=list; save(); mkRedraw(uid); if(mkStatsOpen && kind==='cz') mkRefreshUI();
+  if(kind==='nt') m.n='';
+  list.push(m); state.marks[uid]=list; save(); mkRedraw(uid); if(mkStatsOpen && kind==='cz') mkRefreshUI(); if(kind==='nt') mkNotePop(m.id, true);
 }
 /* 빈칸 열기 · O/X 기록 */
 function mkPopClose(){ $('#mk-pop')?.remove(); }
@@ -5953,6 +5986,7 @@ document.addEventListener('selectionchange', ()=>{   // 폰에서 선택 손잡�
 document.addEventListener('click', e=>{
   const t=e.target; if(!t.closest) return;
   if(!t.closest('#mk-pop') && !t.closest('.ucz')) mkPopClose();
+  const nt=t.closest('.unt'); if(nt && !t.closest('.ucz:not(.open)') && !t.closest('#mk-pop') && getSelection().isCollapsed && mkMode!=='hl-x'){ mkNotePop(nt.dataset.mid, false); return; }
   const sp=t.closest('.uhl,.ucz'); if(!sp || !getSelection().isCollapsed) return;
   const mid=sp.dataset.mid, [uid]=mkFindMark(mid);
   if(sp.classList.contains('uhl') && mkMode==='hl-x'){ state.marks[uid]=mkList(uid).filter(m=>m.id!==mid); save(); mkRedraw(uid); return; }
@@ -5980,13 +6014,14 @@ function mkStatsHTML(){
       <div class="tile"><div class="k">확인한 횟수</div><div class="v">${tot}</div></div>
       <div class="tile"><div class="k">정답률</div><div class="v">${tot?Math.round(ok/tot*100)+'%':'−'}</div></div>
       <div class="tile"><div class="k">내 형광펜</div><div class="v">${hlN}</div></div></div>
-    ${all.length?`<div class="row"><span class="small muted">정렬</span>${[['ng','자주 틀린 순'],['ok','자주 맞힌 순'],['unit','단원 순'],['new','최근 만든 순']].map(([k,l])=>`<button class="chipbtn" data-act="mk-sort" data-v="${k}" aria-pressed="${mkSort===k}">${l}</button>`).join('')}</div>
+    ${all.length?`<div class="row"><button class="btn sm pri" data-act="mk-run" data-v="all">▶ 내 빈칸 풀기</button><button class="btn sm" data-act="mk-run" data-v="ng">자주 틀린 것만 풀기</button></div><div class="row"><span class="small muted">정렬</span>${[['ng','자주 틀린 순'],['ok','자주 맞힌 순'],['unit','단원 순'],['new','최근 만든 순']].map(([k,l])=>`<button class="chipbtn" data-act="mk-sort" data-v="${k}" aria-pressed="${mkSort===k}">${l}</button>`).join('')}</div>
       <div class="tbl-wrap"><table><thead><tr><th>빈칸 내용</th><th class="n">O</th><th class="n">X</th><th class="n">오답률</th><th>마지막 확인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="small muted" style="margin:0">빈칸을 눌러 답을 본 뒤 O·X를 고르면 여기에 쌓입니다. 오답률 50% 이상은 빨간색입니다.</p>`
     :'<div class="empty">아직 만든 빈칸이 없습니다. "빈칸뚫기"를 켜고 본문 글자를 드래그해 보세요.</div>'}`;
 }
 function handleMk(act, a){
-  if(act==='mk-cycle'){ const k=a.dataset.k; mkMode = mkMode===k ? k+'-x' : mkMode===k+'-x' ? null : k; mkPopClose(); mkRefreshUI(); return; }
+  if(mkRunAct(act, a) || mkNoteAct(act, a)) return;
+  if(act==='mk-cycle'){ const k=a.dataset.k; mkMode = k==='nt' ? (mkMode==='nt'?null:'nt') : mkMode===k ? k+'-x' : mkMode===k+'-x' ? null : k; mkPopClose(); mkRefreshUI(); return; }
   if(act==='mk-stats'){ mkStatsOpen=!mkStatsOpen; mkRefreshUI(); return; }
   if(act==='mk-sort'){ mkSort=a.dataset.v; mkRefreshUI(); return; }
   if(act==='mk-hideall'){ document.querySelectorAll('.ucz.open').forEach(x=>x.classList.remove('open')); mkPopClose(); return; }
@@ -5996,6 +6031,262 @@ function handleMk(act, a){
   if(act==='mk-go'){ const uid=a.dataset.u, sec=ALL_SECS.find(s=>s.id===uid); if(!sec) return;
     if(TAB==='book'){ handleBook('book-go', {dataset:{u:uid}}); return; }
     sumSubj=sec.subj; sumQ=''; sumTarget=uid; if(TAB==='summary') renderSummary(); else location.hash='summary'; return; }
+}
+
+/* ===================== 편의 기능: 내 빈칸 풀기 · 오늘 복습 한 번에 · 이어서 하기 · 소제목 목차 · 메모 ===================== */
+/* 이어서 하기: 멈춘 자리는 기기마다 다르므로 이 브라우저에만 저장한다 (기본서 책갈피는 기존대로 동기화) */
+const LS_RESUME='afpk95-resume';
+function rsGet(){ try{ return JSON.parse(localStorage.getItem(LS_RESUME)||'{}')||{}; }catch(e){ return {}; } }
+function rsSet(k,v){ try{ const r=rsGet(); if(v==null) delete r[k]; else r[k]=v; localStorage.setItem(LS_RESUME, JSON.stringify(r)); }catch(e){} }
+function goTab(t, fn){ if(TAB===t) fn(); else if(location.hash==='#'+t) setTab(t); else location.hash=t; window.scrollTo({top:0}); }
+
+/* ---- 1. 내가 뚫은 빈칸 풀기 ---- */
+const mkCtxCache={};
+const MK_CUT=90;
+function mkContext(uid, m){
+  const key=m.id+'|'+m.t; if(mkCtxCache[key]) return mkCtxCache[key];
+  const u=ALL_SECS.find(s=>s.id===uid); let out={b:m.pre||'', a:''};
+  if(u){
+    const d=document.createElement('div');
+    d.innerHTML=`<div>${abbrUnit(`${BODY[uid]?bodyHTML(uid):''}<div>${sumPartsHTML(u)}</div>${oxHTML(uid)}`)}</div>`;
+    const ns=mkNodes(d), st=[]; let acc=0; ns.forEach(n=>{ st.push(acc); acc+=n.length; });
+    const text=ns.map(n=>n.textContent).join(''), i=mkFind(text,m);
+    if(i>=0){
+      // 빈칸이 들어 있는 문단(블록) 안에서만 앞뒤 글을 가져온다
+      const blk=n=>n.parentElement.closest('p,li,td,th,h4,pre,.tip,.trap,.cap,.lab,figcaption')||n.parentElement;
+      const at=p=>{ let k=0; while(k<ns.length-1 && st[k+1]<=p) k++; return k; };
+      let k0=at(i), k1=at(i+m.t.length-1); const B0=blk(ns[k0]), B1=blk(ns[k1]);
+      while(k0>0 && blk(ns[k0-1])===B0) k0--; while(k1<ns.length-1 && blk(ns[k1+1])===B1) k1++;
+      let b=text.slice(st[k0], i), a=text.slice(i+m.t.length, st[k1]+ns[k1].length);
+      if(b.length>MK_CUT){ const t=b.slice(-MK_CUT), j=t.search(/[.?!다]\s[^.?!]*$/); b='…'+(j>=0?t.slice(j+2):t); }
+      if(a.length>MK_CUT){ const j=a.search(/[.?!]\s/); a=(j>=0&&j<MK_CUT*1.5)?a.slice(0,j+1):a.slice(0,MK_CUT)+'…'; }
+      out={b, a};
+    }
+  }
+  return (mkCtxCache[key]=out);
+}
+let mkRunS=null;
+function mkRunRate(x){ const n=x.m.ok+x.m.ng; return n?x.m.ng/n:-1; }
+function mkRunPool(kind){
+  const all=mkAllBlanks();
+  if(kind==='ng') return all.filter(x=>x.m.ng>0 && mkRunRate(x)>=0.5).sort((p,q)=>mkRunRate(q)-mkRunRate(p)||q.m.ng-p.m.ng);
+  if(kind==='new') return all.filter(x=>!(x.m.ok+x.m.ng));
+  if(kind==='due') return all.filter(x=>!(x.m.ok+x.m.ng) || (x.m.ng>0 && mkRunRate(x)>=0.5)).sort((p,q)=>mkRunRate(q)-mkRunRate(p));
+  return shuffleArr(all);
+}
+function mkRunStart(list, title){
+  if(!list.length){ toast('풀 빈칸이 없습니다. 본문·기본서에서 ▭ 빈칸 버튼으로 먼저 빈칸을 만들어 보세요.', 3200); return; }
+  mkRunS={title, ids:list.map(x=>x.m.id), idx:0, shown:false, res:{}}; czS=null;
+  goTab('cloze', renderCloze);
+}
+function mkRunCardHTML(){
+  const all=mkAllBlanks().length, ng=mkRunPool('ng').length, nw=mkRunPool('new').length;
+  return `<div class="card stack"><div class="sec-head"><h2>내가 뚫은 빈칸</h2><span class="small muted">본문·기본서에서 직접 만든 빈칸 ${all}개</span></div>
+    ${all?`<div class="row"><button class="btn pri" data-act="mk-run" data-v="all">전체 풀기 ${all}개</button><button class="btn" data-act="mk-run" data-v="ng" ${ng?'':'disabled'}>자주 틀린 것만 ${ng}개</button><button class="btn" data-act="mk-run" data-v="new" ${nw?'':'disabled'}>아직 안 본 것 ${nw}개</button></div>
+      <p class="small muted" style="margin:0">문장 속 빈칸을 보고 답을 떠올린 뒤 "답 보기" → O·X를 고릅니다. 기록은 빈칸 통계에 함께 쌓입니다. 자주 틀린 것 = 오답률 50% 이상.</p>`
+     :'<p class="small muted" style="margin:0">아직 만든 빈칸이 없습니다. 본문·요약이나 기본서에서 오른쪽 아래 ▭ 빈칸 버튼을 켜고 외울 글자를 드래그해 보세요.</p>'}</div>`;
+}
+function mkRunHTML(){
+  const S=mkRunS, N=S.ids.length;
+  if(S.idx>=N){
+    const ok=S.ids.filter(i=>S.res[i]).length, wrong=S.ids.filter(i=>S.res[i]===false).length, done=Object.keys(S.res).length||1;
+    return `<div class="card stack"><span class="eyebrow">내 빈칸 · ${esc(S.title)} 결과</span>
+      <div class="verdict"><span class="big">${ok}<span class="muted" style="font-size:1rem"> / ${Object.keys(S.res).length}</span></span><span class="num" style="font-size:1.2rem">${Math.round(ok/done*100)}%</span></div>
+      <div class="row"><button class="btn pri" data-act="mk-run-retry" ${wrong?'':'disabled'}>틀린 빈칸 ${wrong}개 다시</button><button class="btn" data-act="mk-run-home">빈칸암기 홈</button>${rvNextBtn()}</div></div>`;
+  }
+  const [uid,m]=mkFindMark(S.ids[S.idx]); if(!m){ S.idx++; return mkRunHTML(); }
+  const c=mkContext(uid,m), u=ALL_SECS.find(s=>s.id===uid)||{title:uid, subj:'intro'}, tot=m.ok+m.ng;
+  const blank = S.shown ? `<mark class="mk-ans">${esc(m.t)}</mark>` : `<span class="mk-blank" aria-label="빈칸">${'　'.repeat(Math.min(14,Math.max(3,Math.ceil(m.t.length*0.8))))}</span>`;
+  return `<div class="card row between"><div class="stack" style="gap:2px"><span class="eyebrow">내 빈칸 · ${esc(S.title)}</span><b class="num">${S.idx+1} / ${N}</b></div><button class="btn sm" data-act="mk-run-home">그만 풀기</button></div>
+    <div class="progress"><div style="width:${(S.idx+1)/N*100}%;background:var(--accent)"></div></div>
+    <div class="card stack">
+      <div class="row between"><span class="small">${chip(u.subj)} <span class="muted">${esc(u.title)}</span></span><span class="small muted">${tot?`${tot}회 · 정답률 ${Math.round(m.ok/tot*100)}%`:'처음 보는 빈칸'}</span></div>
+      <div class="cz-sent">${esc(c.b)}${blank}${esc(c.a)}</div>
+      ${S.shown?`<div class="row"><span class="small muted">맞혔나요?</span><button class="mk-o" data-act="mk-run-ox" data-v="o">O 맞음</button><button class="mk-x" data-act="mk-run-ox" data-v="x">X 틀림</button><button class="lnk" data-act="mk-go" data-u="${uid}">본문에서 보기</button></div>
+        <span class="small muted">키보드 O·X 또는 1·2</span>`
+        :`<div class="row"><button class="btn pri" data-act="mk-run-show">답 보기 <span class="small" style="opacity:.8">Space</span></button><span class="small muted">머릿속으로 답을 떠올린 뒤 누르세요</span></div>`}
+    </div>`;
+}
+function mkRunAct(act, a){
+  if(act==='mk-run'){ const v=a.dataset.v; mkRunStart(mkRunPool(v), {all:'전체',ng:'자주 틀린 것',new:'아직 안 본 것',due:'오늘 복습'}[v]||'내 빈칸'); return true; }
+  if(act==='mk-run-home'){ mkRunS=null; rsSet('mkrun', null); renderCloze(); window.scrollTo({top:0}); return true; }
+  if(act==='mk-run-retry'){ const l=mkRunS.ids.filter(i=>mkRunS.res[i]===false).map(i=>({m:mkFindMark(i)[1]})).filter(x=>x.m); mkRunStart(l, '틀린 빈칸 다시'); return true; }
+  if(!mkRunS || mkRunS.idx>=mkRunS.ids.length) return false;
+  if(act==='mk-run-show'){ mkRunS.shown=true; renderCloze(); return true; }
+  if(act==='mk-run-ox'){ const S=mkRunS, id=S.ids[S.idx], [,m]=mkFindMark(id); if(!S.shown) return true;
+    if(m){ if(a.dataset.v==='o') m.ok++; else m.ng++; m.last=todayStr(); save(); }
+    S.res[id]=a.dataset.v==='o'; S.idx++; S.shown=false; renderCloze(); return true; }
+  return false;
+}
+document.addEventListener('keydown', e=>{
+  if(TAB!=='cloze' || !mkRunS || mkRunS.idx>=mkRunS.ids.length || e.isComposing) return;
+  const t=e.target; if(t && t.matches && t.matches('input,textarea,select')) return;
+  if(!mkRunS.shown && (e.key===' '||e.key==='Enter')){ e.preventDefault(); handleMk('mk-run-show', document.body); return; }
+  if(mkRunS.shown){ const k=e.key.toLowerCase();
+    if(k==='o'||k==='1'||k==='ㅐ'){ e.preventDefault(); handleMk('mk-run-ox', {dataset:{v:'o'}}); }
+    else if(k==='x'||k==='2'||k==='ㅌ'){ e.preventDefault(); handleMk('mk-run-ox', {dataset:{v:'x'}}); } }
+});
+
+/* ---- 2. 오늘 복습 한 번에: 네 단계를 차례로. 시작한 단계는 오늘 날짜로 ✓ (기기 간 동기화) ---- */
+const RV_STEPS=[
+  {k:'q', t:'틀린 예상문제', u:'문항', n:()=>Math.min(30,dueQIds().length), go:()=>rvClick('qz-review')},
+  {k:'m', t:'내 빈칸 (자주 틀림·안 본 것)', u:'개', n:()=>mkRunPool('due').length, go:()=>mkRunStart(mkRunPool('due'), '오늘 복습 · 내 빈칸')},
+  {k:'z', t:'빈칸암기 많이 틀린 것', u:'개', n:()=>Math.min(20,czAll().filter(c=>czWeak(c.id)>0).length), go:()=>{ mkRunS=null; czStart(czOrder(czAll().filter(c=>czWeak(c.id)>0),'wrong').slice(0,20), '오늘 복습 · 많이 틀린 빈칸'); if(TAB!=='cloze') goTab('cloze', renderCloze); }},
+  {k:'c', t:'암기카드 복습', u:'장', n:()=>allCards().filter(cardDue).length, go:()=>rvClick('c-due-go')},
+];
+function rvClick(act){ const b=document.createElement('button'); b.dataset.act=act; b.hidden=true; document.body.appendChild(b); b.click(); b.remove(); }
+function rvDone(){ return state.rv && state.rv.d===todayStr() ? state.rv.s : []; }
+function rvTodo(){ const d=rvDone(); return RV_STEPS.filter(s=>!d.includes(s.k) && s.n()>0); }
+function rvStart(k){
+  const s=RV_STEPS.find(x=>x.k===k); if(!s) return;
+  if(!s.n()){ toast('오늘은 이 단계에 복습할 것이 없습니다.', 2500); return; }
+  const d=rvDone().slice(); if(!d.includes(k)) d.push(k); state.rv={d:todayStr(), s:d}; save(); s.go();
+}
+function rvNextBtn(){
+  if(!rvDone().length) return ''; const nx=rvTodo()[0];
+  return nx ? `<button class="btn pri" data-act="rv-next">다음 복습: ${nx.t} ${nx.n()}${nx.u} →</button>` : `<span class="pill ok">오늘 복습 4단계 끝 ✓</span>`;
+}
+function rvStepsHTML(){
+  const d=rvDone(), todo=rvTodo();
+  return `<div class="rv-steps">${RV_STEPS.map((s,i)=>{ const n=s.n(), dn=d.includes(s.k);
+      return `<button class="rv-step${dn?' done':''}" data-act="rv-step" data-k="${s.k}" ${n||dn?'':'disabled'}><span class="rv-no">${dn?'✓':i+1}</span><span class="rv-t">${s.t}</span><b class="num">${n}${s.u}</b></button>`; }).join('')}</div>
+    <div class="row">${todo.length?`<button class="btn pri" data-act="rv-next">▶ 오늘 복습 한 번에 ${d.length?'이어서':'시작'} <span class="small" style="opacity:.85">(${todo.length}단계 남음)</span></button>`
+      : `<span class="pill ok">${d.length?'오늘 복습을 모두 시작했습니다 ✓':'오늘은 복습할 것이 없습니다'}</span>`}
+      <button class="btn" data-act="qz-weak">약점 맞춤 50문항</button></div>
+    <p class="small muted" style="margin:0">순서: 틀린 문제 → 내 빈칸 → 빈칸암기 → 암기카드. 한 단계를 끝내면 결과 화면의 "다음 복습" 버튼으로 이어집니다.</p>`;
+}
+
+/* ---- 3. 이어서 하기 ---- */
+function resumeCardHTML(){
+  const r=rsGet(), rows=[];
+  const bm=ALL_SECS.find(s=>s.id===state.bookmark);
+  rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">기본서</span><span>${bm?`제${partNo(bm.subj)}편 ${SUBJ_BY[bm.subj].name} · ${unitNo(bm.subj,bm.id)}장 ${bm.title}`:'아직 읽기 시작하지 않았습니다'}</span><span class="small muted">다 읽은 장 ${readCount(ALL_SECS)}/${ALL_SECS.length}</span></div>
+    <button class="btn ${bm?'pri':''}" data-act="${bm?'book-resume':'book-part'}" data-p="guide">${bm?'이어 읽기':'처음부터 읽기'}</button></div>`);
+  const ss=ALL_SECS.find(s=>s.id===r.sum);
+  if(ss) rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">본문·요약</span><span>${chip(ss.subj)} ${ss.title}</span></div><button class="btn" data-act="rs-sum">이어 보기</button></div>`);
+  const q=rsQz();
+  if(q) rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">예상문제 ${q.mode==='study'?'학습모드':'풀이'}</span><span>${esc(q.title)} · <b class="num">${q.idx+1}/${q.items.length}</b>번째</span></div><button class="btn" data-act="rs-qz">이어 풀기</button></div>`);
+  const sm=savedMock();
+  if(sm) rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">실전 시험지</span><span>${esc(sm.title||'모의고사')} · 저장된 답안 ${Object.keys(sm.ans||{}).length}개</span></div><button class="btn" data-act="rs-mock">이어 풀기</button></div>`);
+  const cz=rsCz();
+  if(cz) rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">빈칸암기</span><span>${esc(cz.title)} · <b class="num">${cz.idx+1}/${cz.ids.length}</b>번째</span></div><button class="btn" data-act="rs-cz">이어 풀기</button></div>`);
+  const mr=rsMk();
+  if(mr) rows.push(`<div class="rs-row"><div class="stack" style="gap:1px;min-width:0"><span class="eyebrow">내 빈칸</span><span>${esc(mr.title)} · <b class="num">${mr.idx+1}/${mr.ids.length}</b>번째</span></div><button class="btn" data-act="rs-mk">이어 풀기</button></div>`);
+  return `<div class="card stack"><div class="sec-head"><h2>이어서 하기</h2><span class="small muted">멈춘 자리에서 바로 시작</span></div><div class="rs-list">${rows.join('')}</div></div>`;
+}
+function rsQz(){ const q=rsGet().qz; return q && Array.isArray(q.items) && q.items.length && q.items.every(x=>QB_BY[x.id]) && q.idx<q.items.length ? q : null; }
+function rsCz(){ const c=rsGet().cz; return c && Array.isArray(c.ids) && c.ids.every(i=>CLOZE_BY[i]) && c.idx<c.ids.length ? c : null; }
+function rsMk(){ const c=rsGet().mkrun; return c && Array.isArray(c.ids) && c.idx<c.ids.length && c.ids.some(i=>mkFindMark(i)[1]) ? c : null; }
+function rsAct(act){
+  if(act==='rs-sum'){ const s=ALL_SECS.find(x=>x.id===rsGet().sum); if(!s) return; sumSubj=s.subj; sumQ=''; sumTarget=s.id; if(TAB!=='summary') location.hash='summary'; else renderSummary(); return; }
+  if(act==='rs-qz'){ const q=rsQz(); if(!q) return; qz=q; qzConfirm=null; goTab('quiz', renderQuiz); return; }
+  if(act==='rs-mock'){ goTab('quiz', renderQuiz); return; }
+  if(act==='rs-cz'){ const c=rsCz(); if(!c) return; czS=c; mkRunS=null; goTab('cloze', renderCloze); return; }
+  if(act==='rs-mk'){ const c=rsMk(); if(!c) return; mkRunS=c; czS=null; goTab('cloze', renderCloze); return; }
+}
+/* 본문·요약에서 지금 읽는 단원 기억 */
+let rsSumT=null;
+window.addEventListener('scroll', ()=>{ if(TAB!=='summary' || rsSumT) return; rsSumT=setTimeout(()=>{ rsSumT=null; if(TAB!=='summary') return;
+  const lim=innerHeight*0.3; let cur=null; document.querySelectorAll('#sum-list .sum-sec').forEach(s=>{ if(s.getBoundingClientRect().top<=lim) cur=s.id.slice(4); });
+  if(cur && rsGet().sum!==cur) rsSet('sum', cur); }, 800); }, {passive:true});
+
+/* ---- 4. 소제목 목차 (플로팅, 좌·우 전환) ---- */
+let tocOpen=false, tocSide='right', tocEls=[], tocT=null;
+try{ const o=JSON.parse(localStorage.getItem('afpk95-toc')||'{}'); tocOpen=!!o.open; tocSide=o.side==='left'?'left':'right'; }catch(e){}
+function tocSave(){ try{ localStorage.setItem('afpk95-toc', JSON.stringify({open:tocOpen, side:tocSide})); }catch(e){} }
+function tocBuild(){
+  let fab=$('#toc-fab'), pn=$('#toc-panel');
+  if(TAB!=='summary' && TAB!=='book'){ if(fab) fab.remove(); if(pn) pn.remove(); return; }
+  const root=TAB==='summary'?$('#sum-list'):$('#book-art'); tocEls=[]; let html='';
+  if(root) root.querySelectorAll('.sum-sec, .chapter').forEach(sec=>{ const h3=sec.querySelector('h3'); if(!h3) return;
+    tocEls.push(sec); html+=`<button class="toc-u" data-act="toc-go" data-i="${tocEls.length-1}">${esc(h3.textContent)}</button>`;
+    sec.querySelectorAll('.body-text > h4, .sum-label, .keybox > .lab').forEach(h=>{ tocEls.push(h); html+=`<button class="toc-h" data-act="toc-go" data-i="${tocEls.length-1}">${esc(h.textContent)}</button>`; }); });
+  if(!pn){ pn=document.createElement('nav'); pn.id='toc-panel'; pn.setAttribute('aria-label','소제목 목차'); document.body.appendChild(pn); }
+  if(!fab){ fab=document.createElement('button'); fab.id='toc-fab'; fab.dataset.act='toc-toggle'; document.body.appendChild(fab); }
+  pn.dataset.side=fab.dataset.side=tocSide; pn.hidden=!tocOpen;
+  pn.innerHTML=`<div class="toc-head"><b>목차</b><span class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm" data-act="toc-side">${tocSide==='right'?'⇤ 왼쪽으로':'오른쪽으로 ⇥'}</button><button class="btn sm" data-act="toc-close" aria-label="목차 닫기">✕</button></span></div>
+    <div class="toc-list">${html||'<p class="small muted" style="margin:8px">이 화면에는 소제목이 없습니다. 편이나 단원을 고르면 목차가 나옵니다.</p>'}</div>`;
+  fab.textContent=tocOpen?'✕ 목차 닫기':'☰ 목차'; fab.setAttribute('aria-expanded', tocOpen);
+  tocPlace(); tocMark();
+}
+/* 오른쪽에 둘 때는 형광펜·이동 버튼 묶음 위로 올린다 */
+function tocPlace(){
+  const fab=$('#toc-fab'), pn=$('#toc-panel'), fl=$('#mk-float'); if(!fab||!pn) return;
+  const base=16, fh=(tocSide==='right' && fl) ? fl.getBoundingClientRect().height+8 : 0;
+  fab.style.bottom=`calc(${base+fh}px + env(safe-area-inset-bottom,0px))`;
+  pn.style.bottom=`calc(${base+fh+52}px + env(safe-area-inset-bottom,0px))`;
+}
+function tocMark(){
+  const pn=$('#toc-panel'); if(!pn || pn.hidden || !tocEls.length) return;
+  let cur=-1; tocEls.forEach((el,i)=>{ if(el.isConnected && el.getBoundingClientRect().top<=110) cur=i; });
+  pn.querySelectorAll('[data-act="toc-go"]').forEach(b=>{ const on=+b.dataset.i===cur; b.classList.toggle('cur', on); if(on && b.dataset.cur!=='1'){ const l=pn.querySelector('.toc-list'), bt=b.offsetTop-l.offsetTop; if(bt<l.scrollTop||bt>l.scrollTop+l.clientHeight-40) l.scrollTop=bt-l.clientHeight/3; } b.dataset.cur=on?'1':''; });
+}
+window.addEventListener('scroll', ()=>{ if(tocT) return; tocT=setTimeout(()=>{ tocT=null; tocMark(); }, 150); }, {passive:true});
+window.addEventListener('resize', ()=>tocPlace());
+function tocAct(act, a){
+  if(act==='toc-toggle'){ tocOpen=!tocOpen; tocSave(); tocBuild(); return; }
+  if(act==='toc-close'){ tocOpen=false; tocSave(); tocBuild(); return; }
+  if(act==='toc-side'){ tocSide=tocSide==='right'?'left':'right'; tocSave(); tocBuild(); return; }
+  if(act==='toc-go'){ const el=tocEls[+a.dataset.i]; if(!el || !el.isConnected){ tocBuild(); return; }
+    el.scrollIntoView({block:'start', behavior:'smooth'});
+    if(innerWidth<900){ tocOpen=false; tocSave(); tocBuild(); } return; }
+}
+
+/* ---- 5. 메모: 본문 글자에 다는 메모(형광펜과 같은 방식) + 문제별 메모 ---- */
+let mkNotesOpen=false;
+function mkNotePop(mid, edit){
+  mkPopClose(); const [,m]=mkFindMark(mid); if(!m) return;
+  const sp=[...document.querySelectorAll(`.unt[data-mid="${mid}"]`)].find(x=>x.getClientRects().length);
+  const p=document.createElement('div'); p.id='mk-pop'; p.className='mk-pop mk-note'; p.dataset.mid=mid;
+  const q=esc(m.t.length>40?m.t.slice(0,40)+'…':m.t);
+  p.innerHTML = edit
+    ? `<div class="small muted">“${q}”에 메모</div><textarea id="mk-note-in" rows="3" placeholder="메모를 적으세요 (예: 실무에서는 …)">${esc(m.n||'')}</textarea>
+       <div class="row"><button class="btn sm pri" data-act="mk-note-save" data-mid="${mid}">저장</button><button class="btn sm" data-act="mk-note-cancel" data-mid="${mid}">취소</button>${m.n?`<button class="btn sm" data-act="mk-note-del" data-mid="${mid}">삭제</button>`:''}</div>`
+    : `<div class="small muted">“${q}”</div><div class="mk-note-t">${esc(m.n||'')}</div>
+       <div class="row"><button class="btn sm" data-act="mk-note-edit" data-mid="${mid}">수정</button><button class="btn sm" data-act="mk-note-del" data-mid="${mid}">삭제</button></div>`;
+  document.body.appendChild(p);
+  const rc=sp?sp.getBoundingClientRect():{left:innerWidth/2-150, bottom:innerHeight/3}, pw=p.offsetWidth;
+  p.style.left=Math.max(8, Math.min(innerWidth-pw-8, rc.left+scrollX))+'px'; p.style.top=(rc.bottom+scrollY+6)+'px';
+  if(edit) setTimeout(()=>{ const t=$('#mk-note-in'); if(t){ t.focus({preventScroll:true}); t.setSelectionRange(t.value.length, t.value.length); } }, 0);
+}
+function mkNoteDel(mid){ const [uid]=mkFindMark(mid); if(!uid) return; state.marks[uid]=mkList(uid).filter(x=>x.id!==mid); save(); mkPopClose(); mkRedraw(uid); mkNotesRefresh(); }
+function mkNotesRefresh(){ document.querySelectorAll('.mk-notes-box').forEach(el=>{ el.hidden=!mkNotesOpen; el.innerHTML=mkNotesOpen?mkNotesHTML():''; }); document.querySelectorAll('[data-act="mk-notes"]').forEach(b=>{ b.textContent=`내 메모 ${mkNoteCount()}`; b.setAttribute('aria-expanded', mkNotesOpen); }); }
+function mkNoteCount(){ return Object.values(state.marks).reduce((a,l)=>a+l.filter(m=>m.k==='nt').length,0) + Object.values(state.qmemo||{}).filter(Boolean).length; }
+function mkNotesHTML(){
+  const ord=uid=>ALL_SECS.findIndex(s=>s.id===uid), title=uid=>(ALL_SECS.find(s=>s.id===uid)||{}).title||uid;
+  const L=[]; Object.entries(state.marks).forEach(([uid,l])=>l.forEach(m=>{ if(m.k==='nt') L.push({uid,m}); })); L.sort((p,q)=>ord(p.uid)-ord(q.uid));
+  const Q=Object.entries(state.qmemo||{}).filter(([id,t])=>t&&QB_BY[id]);
+  if(!L.length && !Q.length) return '<div class="empty">아직 메모가 없습니다. 오른쪽 아래 📝 메모 버튼을 켜고 본문 글자를 드래그하거나, 문제 해설 아래 "이 문제에 메모 달기"를 눌러 보세요.</div>';
+  return `<div class="cl">${L.map(({uid,m})=>`<div class="cl-item" style="grid-template-columns:1fr"><div class="stack" style="gap:3px"><span class="small muted">${chip((ALL_SECS.find(s=>s.id===uid)||{}).subj||'intro')} ${esc(title(uid))}</span>
+      <span><span class="unt">${esc(m.t.length>80?m.t.slice(0,80)+'…':m.t)}</span></span><span>📝 ${esc(m.n)}</span>
+      <span class="small"><button class="lnk" data-act="mk-go" data-u="${uid}">보러 가기</button> · <button class="lnk" data-act="mk-note-del" data-mid="${m.id}">삭제</button></span></div></div>`).join('')}
+    ${Q.map(([id,t])=>{ const q=QB_BY[id]; return `<div class="cl-item" style="grid-template-columns:1fr"><div class="stack" style="gap:3px"><span class="small muted">${chip(q.s)} 예상문제</span>
+      <span>${esc(q.q.length>80?q.q.slice(0,80)+'…':q.q)}</span><span>📝 ${esc(t)}</span>
+      <span class="small"><button class="lnk" data-act="mk-qgo" data-q="${id}">문제 다시 보기</button> · <button class="lnk" data-act="mk-qmemo-del" data-q="${id}">삭제</button></span></div></div>`; }).join('')}</div>`;
+}
+function qMemoInner(id){ const t=(state.qmemo||{})[id]||'';
+  return t ? `<div class="qmemo-t">📝 <b>내 메모</b> · ${esc(t)}</div><button class="lnk" data-act="mk-qmemo-edit" data-q="${id}">메모 수정</button>`
+           : `<button class="lnk" data-act="mk-qmemo-edit" data-q="${id}">📝 이 문제에 메모 달기</button>`; }
+function qMemoHTML(id){ return `<div class="qmemo" data-q="${id}">${qMemoInner(id)}</div>`; }
+function qMemoBoxes(id){ return document.querySelectorAll(`.qmemo[data-q="${id}"]`); }
+function mkNoteAct(act, a){
+  if(act==='mk-note-save'){ const mid=a.dataset.mid, [uid,m]=mkFindMark(mid), v=(($('#mk-note-in')||{}).value||'').trim(); if(!m) return true;
+    if(!v){ mkNoteDel(mid); return true; } m.n=v.slice(0,1000); save(); mkPopClose(); mkRedraw(uid); mkNotesRefresh(); toast('메모를 저장했습니다.', 1500); return true; }
+  if(act==='mk-note-cancel'){ const [,m]=mkFindMark(a.dataset.mid); if(m && !m.n) mkNoteDel(a.dataset.mid); else mkPopClose(); return true; }
+  if(act==='mk-note-edit'){ mkNotePop(a.dataset.mid, true); return true; }
+  if(act==='mk-note-del'){ mkNoteDel(a.dataset.mid); return true; }
+  if(act==='mk-notes'){ mkNotesOpen=!mkNotesOpen; mkNotesRefresh(); return true; }
+  if(act==='mk-qgo'){ const q=QB_BY[a.dataset.q]; if(q) startStudy('메모한 문제', [q]); return true; }
+  if(act==='mk-qmemo-edit'){ const id=a.dataset.q, t=(state.qmemo||{})[id]||'';
+    qMemoBoxes(id).forEach(b=>{ b.innerHTML=`<textarea class="qmemo-in" rows="3" placeholder="이 문제에 대한 메모 (헷갈린 이유, 외울 포인트 등)">${esc(t)}</textarea>
+      <div class="row"><button class="btn sm pri" data-act="mk-qmemo-save" data-q="${id}">저장</button><button class="btn sm" data-act="mk-qmemo-cancel" data-q="${id}">취소</button>${t?`<button class="btn sm" data-act="mk-qmemo-del" data-q="${id}">삭제</button>`:''}</div>`; });
+    const f=[...qMemoBoxes(id)].map(b=>b.querySelector('textarea')).find(x=>x&&x.getClientRects().length); if(f) f.focus(); return true; }
+  if(act==='mk-qmemo-save'){ const id=a.dataset.q, box=a.closest('.qmemo'), v=((box&&box.querySelector('textarea'))||{}).value||'';
+    state.qmemo=state.qmemo||{}; if(v.trim()) state.qmemo[id]=v.trim().slice(0,1000); else delete state.qmemo[id]; save();
+    qMemoBoxes(id).forEach(b=>b.innerHTML=qMemoInner(id)); mkNotesRefresh(); return true; }
+  if(act==='mk-qmemo-cancel'){ qMemoBoxes(a.dataset.q).forEach(b=>b.innerHTML=qMemoInner(a.dataset.q)); return true; }
+  if(act==='mk-qmemo-del'){ const id=a.dataset.q; if(state.qmemo) delete state.qmemo[id]; save(); qMemoBoxes(id).forEach(b=>b.innerHTML=qMemoInner(id)); mkNotesRefresh(); return true; }
+  return false;
 }
 
 /* ===================== 기본서 (처음부터 끝까지 읽기) ===================== */
@@ -7820,6 +8111,7 @@ function examOn(){ return TAB==='quiz' && !!qz && !qz.done && isPaperMode(qz.mod
 function renderQuiz(){
   const el=$('#p-quiz');
   document.body.classList.toggle('exam-on', examOn());
+  if(qz) rsSet('qz', !qz.done && !isPaperMode(qz.mode) ? qz : null);   // 화면을 처음 열 때(qz 없음)는 저장된 자리를 지우지 않는다
   if(!qz) { el.innerHTML=quizHomeHTML(); return; }
   if(qz.done){ el.innerHTML = isPaperMode(qz.mode) ? paperResultHTML() : quizResultHTML(); return; }
   el.innerHTML = qz.mode==='study' ? studyRunHTML() : isPaperMode(qz.mode) ? paperRunHTML() : quizRunHTML();
@@ -7877,7 +8169,7 @@ function studyRunHTML(){
         ${rel?`<div class="rel"><div class="small muted" style="margin-bottom:4px">관련 본문${rel.h?` · ${rel.h}`:''}</div>${relHTML(rel)}</div>`:''}
         <div><button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${esc(u.t)}">이 단원 본문 전체 보기</button></div>
       </div>
-      ${u.x?`<p class="small muted" style="margin:0"><b>단원 시험 포인트</b> · ${u.x}</p>`:''}`)
+      ${u.x?`<p class="small muted" style="margin:0"><b>단원 시험 포인트</b> · ${u.x}</p>`:''}`) + qMemoHTML(q.id)
     : `<div><button class="btn pri" data-act="qz-reveal">정답과 해설 보기</button></div>`;
   return `
     <div class="card row between">
@@ -8029,7 +8321,7 @@ function quizRunHTML(){
         ${mock?'':`<button class="lnk" data-act="sum-go" data-subj="${q.s}" data-topic="${u?esc(u.t):''}">본문 보기</button>`}</div>
       <div style="font-size:1.05rem;font-weight:600;line-height:1.6">${esc(q.q)}</div>${qBoxHTML(q,true)}
       <div class="stack" style="gap:8px">${it.o.map((orig,k)=>choiceHTML(it,q,k,orig,chosen,shown)).join('')}</div>
-      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>`:''}
+      ${shown?`<div class="tip"><b style="color:${chosen===q.a?'var(--ok)':'var(--bad)'}">${chosen===q.a?'정답':'오답'}</b> · 정답 ${MARK[it.o.indexOf(q.a)]} · ${abbrUnit(esc(q.e))}</div>${qMemoHTML(q.id)}`:''}
       <div class="row between">
         <button class="btn" data-act="qz-prev" ${qz.idx<=lo?'disabled':''}>이전</button>
         ${atEnd ? (mock?'':`<button class="btn pri" data-act="qz-finish">결과 보기</button>`) : `<button class="btn ${shown||mock?'pri':''}" data-act="qz-next">다음</button>`}
@@ -8057,7 +8349,7 @@ function quizResultHTML(){
     head=`<div class="card stack"><span class="eyebrow">${esc(qz.title)} 결과</span>
       <div class="verdict"><span class="big">${okN}<span class="muted" style="font-size:1rem"> / ${answered.length}</span></span><span class="num" style="font-size:1.2rem">${answered.length?Math.round(okN/answered.length*100):0}%</span></div>
       <p class="small muted">${N}문항 중 ${answered.length}문항을 풀었습니다. ${res.every(r=>r.q.type==='calc')?'계산 연습은 매번 숫자가 바뀌어 문항을 저장하지 않고 유형별 정답률만 기록합니다.':'틀린 문제는 오답노트에 저장됐고 1·3·7·14일 뒤에 다시 나옵니다.'}</p>
-      <div class="row"><button class="btn pri" data-act="qz-home">문제 홈으로</button>${res.every(r=>r.q.type==='calc')?`<button class="btn" data-act="qz-calc" data-g="${res[0].q.gen}" data-n="5">같은 유형 다시 5문제</button>`:(res.some(r=>r.ch!==undefined&&!r.ok)?'<button class="btn" data-act="qz-wrong">오답 다시 풀기</button>':'')}</div></div>`;
+      <div class="row"><button class="btn pri" data-act="qz-home">문제 홈으로</button>${rvNextBtn()}${res.every(r=>r.q.type==='calc')?`<button class="btn" data-act="qz-calc" data-g="${res[0].q.gen}" data-n="5">같은 유형 다시 5문제</button>`:(res.some(r=>r.ch!==undefined&&!r.ok)?'<button class="btn" data-act="qz-wrong">오답 다시 풀기</button>':'')}</div></div>`;
   }
   const wrongs=res.filter(r=>!r.ok);
   const list=wrongs.length?wrongs.map(r=>{const u=unitOf(r.q); return `<div class="cl-item" style="grid-template-columns:1fr"><div class="stack" style="gap:4px">
@@ -8338,11 +8630,7 @@ function reviewCardHTML(){
   const wrongIds=Object.keys(state.why).filter(id=>QB_BY[id]);
   return `<div class="card stack">
     <div class="sec-head"><h2>오늘 복습</h2><span class="small muted">틀린 문제는 1·3·7·14일 뒤에 다시 나옵니다</span></div>
-    <div class="row">
-      <button class="btn ${due.length?'pri':''}" data-act="qz-review" ${due.length?'':'disabled'}>복습할 오답 ${due.length}문항</button>
-      <button class="btn ${cardsDue?'pri':''}" data-act="c-due-go" ${cardsDue?'':'disabled'}>복습할 암기카드 ${cardsDue}장</button>
-      <button class="btn" data-act="qz-weak">약점 맞춤 50문항</button>
-    </div>
+    ${rvStepsHTML()}
     ${weak.length?`<div class="stack" style="gap:6px"><span class="small" style="font-weight:600">정답률이 낮은 단원</span>${weak.map(x=>`<div class="row between"><span class="small"><b>${x.s.title}</b> <span class="muted">${chip(x.s.subj)} ${x.a}문제 · <span style="color:var(--bad);font-weight:700">${Math.round(x.c/x.a*100)}%</span></span></span>
         <span class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="qz-study-unit" data-u="${x.s.id}">학습</button><button class="btn sm pri" data-act="qz-unit" data-u="${x.s.id}">풀기</button></span></div>`).join('')}</div>`
       : `<p class="small muted">${attempted<10?'문제를 풀면 정답률이 낮은 단원이 여기에 표시됩니다. 처음이라면 예상문제 탭에서 학습모드로 시작해 보세요.':'정답률이 70% 미만인 단원이 아직 없습니다.'}</p>`}
@@ -8726,7 +9014,7 @@ function paperResultHTML(){
     return abbrUnit(`<div class="expl"><div><span class="lab" style="color:${r.ok?'var(--ok)':'var(--bad)'}">${r.ok?'정답':r.ch===undefined?'무응답':'오답'}</span> · 정답 ${MARK[r.it.o.indexOf(r.q.a)]}${r.ok||r.ch===undefined?'':` · 내 답 ${MARK[r.it.o.indexOf(r.ch)]}`}</div>
       <div>${esc(r.q.e)}</div>${note[1]?`<div><span class="lab" style="color:var(--warn)">함정</span> · ${esc(note[1])}</div>`:''}
       <div class="small"><span class="lab">필요한 개념</span> · ${esc(note[0]||'')} <span class="muted">(${u?u.title:''})</span> · <button class="lnk" data-act="sum-go" data-subj="${r.q.s}" data-topic="${u?esc(u.t):''}">본문</button>${qz.sec&&qz.sec[r.q.id]!==undefined?` · <span class="muted">소요 약 ${Math.round(qz.sec[r.q.id])}초</span>`:''}</div>
-      ${r.ok?'':whyChipsHTML(r.q.id)}</div>`); };
+      ${r.ok?'':whyChipsHTML(r.q.id)}</div>`) + qMemoHTML(r.q.id); };
   const expl = show.length ? `<div class="sheet" style="margin-top:4px">${sheetPagesHTML(show.map(r=>r.i), i=>sheetQHTML(i, explFn(i), true))}</div>` : '<div class="empty">틀린 문제가 없습니다.</div>';
   // 오답 요약카드
   const wrongUnits={}; res.filter(r=>!r.ok).forEach(r=>{ (wrongUnits[r.q.u]=wrongUnits[r.q.u]||[]).push(r); });
@@ -10100,7 +10388,7 @@ function czOrder(list, order){
 function czStart(list, title){
   if(!list.length){ toast('조건에 맞는 빈칸이 없습니다.', 3000); return; }
   czS={title, ids:list.map(c=>c.id), idx:0, res:{}, checked:false, hint:false, last:null};
-  renderCloze(); window.scrollTo({top:0});
+  mkRunS=null; renderCloze(); window.scrollTo({top:0});
 }
 function czRecord(id, ok){
   const s=czStat(id).slice(); s[0]++; if(ok) s[1]++; s[2]=ok?1:0; state.cz[id]=s; save();
@@ -10118,7 +10406,7 @@ function czHomeHTML(){
     return `<div class="cl-item" style="grid-template-columns:1fr auto"><div style="min-width:0"><div style="font-weight:600">${esc(u.title)}</div>
       <div class="small muted">빈칸 ${us.length}개 · 푼 빈칸 ${t.length} · ${a?`정답률 <span style="${k/a<0.6?'color:var(--bad);font-weight:700':''}">${Math.round(k/a*100)}%</span>`:'미응시'} · 틀린 적 있는 빈칸 ${w}</div></div>
       <button class="btn sm pri" data-act="cz-unit" data-u="${u.id}" ${us.length?'':'disabled'}>시작</button></div>`; }).join('');
-  return `
+  return mkRunCardHTML()+`
     <div class="tiles">
       <div class="tile"><div class="k">전체 빈칸</div><div class="v">${all.length}</div></div>
       <div class="tile"><div class="k">푼 빈칸</div><div class="v">${tried.length}<span class="muted small"> / ${all.length}</span></div></div>
@@ -10176,13 +10464,15 @@ function czDoneHTML(){
   const S=czS, ids=S.ids, okN=ids.filter(i=>S.res[i]).length, wrong=ids.filter(i=>S.res[i]===false);
   return `<div class="card stack"><span class="eyebrow">빈칸암기 · ${esc(S.title)} 결과</span>
       <div class="verdict"><span class="big">${okN}<span class="muted" style="font-size:1rem"> / ${ids.length}</span></span><span class="num" style="font-size:1.2rem">${Math.round(okN/ids.length*100)}%</span></div>
-      <div class="row"><button class="btn pri" data-act="cz-retry" ${wrong.length?'':'disabled'}>틀린 빈칸 ${wrong.length}개 다시</button><button class="btn" data-act="cz-again">같은 조건으로 한 번 더</button><button class="btn" data-act="cz-home">빈칸암기 홈으로</button></div></div>
+      <div class="row"><button class="btn pri" data-act="cz-retry" ${wrong.length?'':'disabled'}>틀린 빈칸 ${wrong.length}개 다시</button><button class="btn" data-act="cz-again">같은 조건으로 한 번 더</button>${rvNextBtn()}<button class="btn" data-act="cz-home">빈칸암기 홈으로</button></div></div>
     <div class="card stack"><div class="sec-head"><h2>틀린 빈칸</h2><span class="small muted">${wrong.length}개</span></div>
       ${wrong.length?`<div class="cl">${wrong.map(i=>{ const c=CLOZE_BY[i], s=czStat(i); return `<div class="cl-item" style="grid-template-columns:1fr"><div><div>${czSentenceHTML(c,`<mark>${esc(c.ans)}</mark>`)}</div><div class="small muted">${esc((ALL_SECS.find(x=>x.id===c.u)||{}).title||'')} · 시도 ${s[0]}회 · 오답률 ${Math.round((s[0]-s[1])/s[0]*100)}%</div></div></div>`; }).join('')}</div>`:'<div class="empty">모두 맞혔습니다.</div>'}</div>`;
 }
 function renderCloze(){
   const el=$('#p-cloze'); if(!el) return;
-  if(!czS) el.innerHTML=czHomeHTML();
+  if(czS) rsSet('cz', czS.idx<czS.ids.length ? czS : null); if(mkRunS) rsSet('mkrun', mkRunS.idx<mkRunS.ids.length ? mkRunS : null);
+  if(mkRunS) el.innerHTML=mkRunHTML();
+  else if(!czS) el.innerHTML=czHomeHTML();
   else if(czS.idx>=czS.ids.length) el.innerHTML=czDoneHTML();
   else { el.innerHTML=czRunHTML(); if(!czS.checked){ const i=$('#cz-in'); if(i) setTimeout(()=>i.focus({preventScroll:true}),0); } }
 }
@@ -10195,8 +10485,8 @@ function handleCloze(act, a){
   if(act==='cz-start'){ czStart(czOrder(czFiltered(), czF.order).slice(0,czF.n), `${czF.s==='all'?'전체':SUBJ_BY[czF.s].short} · ${({weak:'약점 순',new:'안 푼 것 먼저',random:'무작위',wrong:'틀린 것만'})[czF.order]}`); return; }
   if(act==='cz-weakstart'){ czStart(czOrder(czFiltered(),'wrong').slice(0,czF.n), '많이 틀린 빈칸'); return; }
   if(act==='cz-unit'){ const f={...czF, s:czF.s, u:a.dataset.u}; czF.u=a.dataset.u; czStart(czOrder(czFiltered(f), czF.order).slice(0,czF.n), (ALL_SECS.find(s=>s.id===a.dataset.u)||{}).title||'단원'); return; }
-  if(act==='cz-home'){ czS=null; renderCloze(); window.scrollTo({top:0}); return; }
-  if(act==='cz-quit'){ czS=null; renderCloze(); return; }
+  if(act==='cz-home'){ czS=null; rsSet('cz', null); renderCloze(); window.scrollTo({top:0}); return; }
+  if(act==='cz-quit'){ czS=null; rsSet('cz', null); renderCloze(); return; }
   if(act==='cz-again'){ czStart(czOrder(czFiltered(), czF.order).slice(0,czF.n), czS?czS.title:'빈칸암기'); return; }
   if(act==='cz-retry'){ const w=czS.ids.filter(i=>czS.res[i]===false).map(i=>CLOZE_BY[i]); czStart(czOrder(w,'wrong').length?czOrder(w,'wrong'):shuffleArr(w), '틀린 빈칸 다시'); return; }
   if(!czS || czS.idx>=czS.ids.length) return;
@@ -10398,6 +10688,10 @@ document.addEventListener('click', e=>{
   else if(act.startsWith('cz-')) handleCloze(act, a);
   else if(act.startsWith('book-')) handleBook(act, a);
   else if(act.startsWith('mk-')) handleMk(act, a);
+  else if(act==='rv-next'){ const nx=rvTodo()[0]; if(nx) rvStart(nx.k); }
+  else if(act==='rv-step') rvStart(a.dataset.k);
+  else if(act.startsWith('rs-')) rsAct(act);
+  else if(act.startsWith('toc-')) tocAct(act, a);
   else if(act==='fl-top') window.scrollTo({top:0, behavior:'smooth'});
   else if(act==='fl-bottom') window.scrollTo({top:document.documentElement.scrollHeight, behavior:'smooth'});
   else if(act==='fl-theme'){ const dark = themePref==='auto' ? matchMedia('(prefers-color-scheme: dark)').matches : themePref==='dark';
@@ -10490,7 +10784,7 @@ function handleQuiz(act, a){
     const qs=QB.filter(q=>q.u===sec.id); if(!qs.length) return; startQuiz('practice', sec.title, qs); return; }
   if(act==='qz-wrong'){ const qs=QB.filter(q=>state.wrong[q.id]); if(!qs.length) return; startQuiz('wrong','오답 다시 풀기', shuffleArr(qs)); return; }
   if(act==='qz-rand'){ startQuiz('practice','무작위 20문항', shuffleArr(QB).slice(0,20)); return; }
-  if(act==='qz-home'){ qz=null; renderQuiz(); goTop(); return; }
+  if(act==='qz-home'){ qz=null; rsSet('qz', null); renderQuiz(); goTop(); return; }
   if(!qz) return;
   const mock=isPaperMode(qz.mode);
   const [lo,hi]=mock?mockRange():[0,qz.items.length];
