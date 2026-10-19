@@ -508,6 +508,33 @@ kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);bo
 .vs-lead{font-size:.82rem;font-weight:700;color:var(--accent)}
 .vs-opts{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
 @media print{#sel-pop,.modal{display:none!important}}
+.bk-nav{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--paper)}
+.nav-lab{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;flex-wrap:wrap}
+.nav-step{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-size:.78rem;flex:0 0 auto}
+.part-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(138px,1fr))}
+.part-tile{font:inherit;text-align:left;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;position:relative}
+.part-tile:hover{border-color:var(--accent)}
+.part-tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent) inset}
+.part-tile[aria-pressed="true"]::after{content:"✓";position:absolute;top:8px;right:10px;color:var(--accent);font-weight:800}
+.pt-top{padding-right:18px;display:flex;gap:6px;align-items:baseline;font-size:.72rem;color:var(--muted)} .pt-no{font-weight:800;color:var(--accent)}
+.pt-name{font-weight:800;font-size:.98rem;line-height:1.3}
+.pt-bar{height:5px;border-radius:3px;background:var(--line2);overflow:hidden} .pt-bar i{display:block;height:100%;background:var(--ok)}
+.pt-cnt{font-size:.74rem;color:var(--muted)}
+.ch-list{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.ch-row{font:inherit;text-align:left;display:grid;grid-template-columns:30px 1fr auto;gap:10px;align-items:center;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);cursor:pointer;border-left:4px solid var(--line)}
+.ch-row:hover{border-color:var(--accent)}
+.ch-row.on{border-color:var(--accent);border-left-color:var(--accent);background:var(--accent-soft)}
+.ch-no{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:800;background:var(--line2);font-size:.9rem}
+.ch-row.on .ch-no{background:var(--accent);color:var(--on-accent)}
+.ch-t{display:flex;flex-direction:column;min-width:0} .ch-t b{font-size:.93rem;line-height:1.35} .ch-t small{color:var(--muted);font-size:.76rem}
+.ch-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:.78rem}
+.ch-done{color:var(--ok);font-weight:700;font-size:.74rem;white-space:nowrap}
+.ch-row.ch-extra{border-style:dashed;border-left-style:solid} .ch-row.ch-extra .ch-no{background:transparent;border:1px dashed var(--muted);color:var(--muted)}
+.apx-row{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;border-top:1px dashed var(--line);padding-top:10px}
+.apx{font:inherit;font-size:.85rem;background:none;border:0;padding:4px 2px;color:var(--accent);cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:transparent}
+.apx:hover{text-decoration-color:currentColor} .apx.on{color:var(--ink);font-weight:800;text-decoration-color:var(--ink)}
+.tool-box{border:1px solid var(--line2);background:var(--paper);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.tool-lab{font-size:.74rem;font-weight:700;color:var(--muted)}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -6838,10 +6865,10 @@ function renderSummary(){
       </div>
       ${printPanelHTML('sum')}
       <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상)</span>
-      ${mkToolsHTML()}
+      <div class="tool-box"><span class="tool-lab">내 표시 도구</span>${mkToolsHTML()}</div>
       <input type="search" id="sum-q" placeholder="전체 검색 (본문·요약·문제·카드·메모): 예) 유류분, 듀레이션" value="${esc(sumQ)}" aria-label="요약본 검색">
-      <div class="chips">${STUDY_ORDER.map(id=>{const n=ALL_SECS.filter(s=>s.subj===id), r=readCount(n);
-        return `<button class="chipbtn" data-act="sum-subj" data-s="${id}" aria-pressed="${!sumQ&&sumSubj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${r}/${n.length}</span></button>`;}).join('')}</div>
+      <div class="nav-lab"><span class="nav-step">✓</span>과목 고르기 <span class="small muted">공부 순서</span></div>
+      ${partTilesHTML(STUDY_ORDER, sumQ?null:sumSubj, 'sum-subj', 's', '과목 선택')}
     </div>
     <div class="stack" id="sum-list" style="gap:14px"></div>`;
   renderSumList(); mkRefreshUI();
@@ -8051,6 +8078,34 @@ function partHTML(subj, mode){
       ${next?`<button class="btn pri" data-act="book-part" data-p="${next}">제${i+2}편 ${SUBJ_BY[next].name} →</button>`:`<span class="small muted">마지막 편입니다. 예상문제 탭의 실전 모의고사로 마무리하세요.</span>`}
     </nav>`;
 }
+/* ---- 편(과목)·장 고르기: 편은 진도 막대가 있는 카드, 장은 번호 목록, 부록은 작은 링크 ---- */
+function partTilesHTML(ids, cur, act, attr, label, book){
+  return `<div class="part-grid" role="group" aria-label="${label}">${ids.map(id=>{ const S=SUBJ_BY[id], us=SUMMARY[id], rd=us.filter(u=>state.read[u.id]).length, on=cur===id;
+    return `<button class="part-tile${on?' on':''}" data-act="${act}" data-${attr}="${id}" aria-pressed="${on}">
+      <span class="pt-top">${book?`<span class="pt-no">제${partNo(id)}편</span>`:''}<span class="pt-mod">모듈${S.mod} · ${S.q}문항</span></span>
+      <span class="pt-name">${S.name.replace(/^재무설계 /,'')}</span>
+      <span class="pt-bar"><i style="width:${Math.round(rd/us.length*100)}%"></i></span>
+      <span class="pt-cnt num">${rd}/${us.length}장</span></button>`; }).join('')}</div>`;
+}
+function chapterListHTML(subj){
+  const us=SUMMARY[subj], row=(key, no, title, sub, meta, cls)=>`<button class="ch-row${cls||''}${bookUnit===key?' on':''}" data-act="book-unit" data-u="${key}" aria-current="${bookUnit===key?'true':'false'}"><span class="ch-no">${no}</span><span class="ch-t"><b>${title}</b>${sub?`<small>${sub}</small>`:''}</span><span class="ch-meta">${meta||''}</span></button>`;
+  return `<div class="ch-list">
+    ${row('intro','i','편 소개','이 편의 전략과 차례','', ' ch-extra')}
+    ${us.map((u,i)=>row(u.id, i+1, esc(u.title), `플랜 단원 · ${esc(u.t)}`, `${stars(u.id)}${state.read[u.id]?'<span class="ch-done">✓ 읽음</span>':''}`)).join('')}
+    ${row('all','▶','편 전체 이어 읽기',`${us.length}개 장을 한 화면에`,'', ' ch-extra')}
+  </div>`;
+}
+const BOOK_APX=[['guide','📖','들어가며'],['abbr','🔤','약어 사전'],['note','🖍','형광펜 노트'],['num','🔢','숫자 비교표'],['eve','📝','시험 전날 요약']];
+function bookNavHTML(){
+  const sub=SUBJ_BY[bookPart];
+  return `<div class="bk-nav">
+    <div class="nav-lab"><span class="nav-step">1</span>편 고르기 <span class="small muted">시험 과목 순서 · 모듈1 → 모듈2</span></div>
+    ${partTilesHTML(BOOK_ORDER, bookPart, 'book-part', 'p', '편 선택', true)}
+    ${sub?`<div class="nav-lab"><span class="nav-step">2</span>장 고르기 <span class="small muted">제${partNo(bookPart)}편 ${sub.name} · ${SUMMARY[bookPart].length}개 장</span></div>${chapterListHTML(bookPart)}`
+      :`<div class="nav-lab"><span class="nav-step">2</span>장 고르기 <span class="small muted">위에서 편을 고르면 장 목록이 나옵니다</span></div>`}
+    <div class="apx-row" role="group" aria-label="부록·도구"><span class="small muted">부록·도구</span>${BOOK_APX.map(([k,ic,l])=>`<button class="apx${bookPart===k?' on':''}" data-act="book-part" data-p="${k}" aria-pressed="${bookPart===k}">${ic} ${l}</button>`).join('')}</div>
+  </div>`;
+}
 function renderBook(){
   if(!bookPart){ const bm=ALL_SECS.find(s=>s.id===state.bookmark); bookPart = bm ? bm.subj : 'guide'; if(bm) bookUnit=bm.id; }
   const total=ALL_SECS.length, readN=readCount(ALL_SECS), bm=ALL_SECS.find(s=>s.id===state.bookmark);
@@ -8070,22 +8125,9 @@ function renderBook(){
         <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ${stars('in1')} = 출제 중요도(예상) · O/X = 시험에 나오는 문장</span>
         <div class="row"><button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button><button class="btn sm" data-act="pr-open" data-k="book" aria-expanded="false">🖨 인쇄</button></div>
       </div>
-      ${mkToolsHTML()}
+      <div class="tool-box"><span class="tool-lab">내 표시 도구</span>${mkToolsHTML()}</div>
       ${printPanelHTML('book')}
-      <div class="chips" role="tablist" aria-label="편 선택">
-        <button class="chipbtn" data-act="book-part" data-p="guide" aria-pressed="${bookPart==='guide'}">들어가며</button>
-        <button class="chipbtn" data-act="book-part" data-p="abbr" aria-pressed="${bookPart==='abbr'}">약어 사전</button>
-        <button class="chipbtn" data-act="book-part" data-p="note" aria-pressed="${bookPart==='note'}">형광펜 노트</button>
-        <button class="chipbtn" data-act="book-part" data-p="num" aria-pressed="${bookPart==='num'}">숫자 비교표</button>
-        <button class="chipbtn" data-act="book-part" data-p="eve" aria-pressed="${bookPart==='eve'}">시험 전날 요약</button>
-        ${BOOK_ORDER.map(p=>{ const us=SUMMARY[p], rd=us.filter(u=>state.read[u.id]).length;
-          return `<button class="chipbtn" data-act="book-part" data-p="${p}" aria-pressed="${bookPart===p}">${SUBJ_BY[p].short} <span class="num" style="opacity:.7">${rd}/${us.length}</span></button>`; }).join('')}
-      </div>
-      ${SUBJ_BY[bookPart]?`<div class="chips" aria-label="${SUBJ_BY[bookPart].name} 장 선택">
-        <button class="chipbtn" data-act="book-unit" data-u="intro" aria-pressed="${bookUnit==='intro'}">편 소개</button>
-        ${SUMMARY[bookPart].map((u,i)=>`<button class="chipbtn" data-act="book-unit" data-u="${u.id}" aria-pressed="${bookUnit===u.id}">${i+1}. ${esc(u.t)}${state.read[u.id]?' ✓':''}</button>`).join('')}
-        <button class="chipbtn" data-act="book-unit" data-u="all" aria-pressed="${bookUnit==='all'}">편 전체 이어 읽기</button>
-      </div>`:''}
+      ${bookNavHTML()}
       <details class="toc"><summary class="btn">전체 목차 펼치기</summary><ol class="toc-list">${toc}</ol></details>
     </div>
     <article class="book card" id="book-art" style="--bfs:${BOOK_FS[bookFs]}">${bookPart==='guide'?guideHTML():bookPart==='abbr'?abbrHTML():bookPart==='note'?noteHTML():bookPart==='num'?numHTML():bookPart==='eve'?eveHTML():partHTML(bookPart, bookUnit)}</article>`;
@@ -12651,7 +12693,7 @@ document.addEventListener('click', e=>{
     const on=!!state.read[id]; a.setAttribute('aria-pressed',on); a.textContent=on?'읽음 ✓':'읽음 표시';
     a.closest('.sum-sec')?.classList.toggle('is-read',on);
     const p=$('#sum-prog'); if(p) p.innerHTML=sumProgText();
-    document.querySelectorAll('[data-act="sum-subj"]').forEach(b=>{const n=ALL_SECS.filter(s=>s.subj===b.dataset.s); b.lastElementChild.textContent=`${readCount(n)}/${n.length}`;});
+    document.querySelectorAll('[data-act="sum-subj"]').forEach(b=>{const n=ALL_SECS.filter(s=>s.subj===b.dataset.s); b.lastElementChild.textContent=`${readCount(n)}/${n.length}장`; const bar=b.querySelector('.pt-bar i'); if(bar) bar.style.width=Math.round(readCount(n)/n.length*100)+'%';});
   }
   else if(act==='theme'){ themePref=a.dataset.v; try{ if(themePref==='auto') localStorage.removeItem(LS_THEME); else localStorage.setItem(LS_THEME, themePref); }catch(_){} applyTheme(); mkRefreshUI(); }
   else if(act.startsWith('pr-')) handlePrint(act, a);
