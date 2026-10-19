@@ -535,6 +535,23 @@ kbd{font:inherit;font-size:.85em;font-weight:700;border:1px solid var(--line);bo
 .apx:hover{text-decoration-color:currentColor} .apx.on{color:var(--ink);font-weight:800;text-decoration-color:var(--ink)}
 .tool-box{border:1px solid var(--line2);background:var(--paper);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 .tool-lab{font-size:.74rem;font-weight:700;color:var(--muted)}
+.seg.view{display:flex;width:100%;border-radius:12px;padding:4px;background:var(--line2);border:0}
+.seg.view button{flex:1 1 auto;font-size:.95rem;padding:9px 12px;border-radius:9px;color:var(--ink)}
+.seg.view button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:800}
+.frow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.flab{flex:0 0 auto;min-width:3.6em;font-size:.76rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
+.fseg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:2px;border:1px solid var(--line);border-radius:9px;background:var(--paper)}
+.fseg .chipbtn{border:0;border-radius:7px;background:none;padding:4px 10px}
+.fseg .chipbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.sp-grid{display:grid;flex:1 1 300px;gap:6px;grid-template-columns:repeat(auto-fill,minmax(76px,1fr))}
+.sp-tile{font:inherit;display:flex;flex-direction:column;align-items:flex-start;gap:0;padding:6px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer;text-align:left}
+.sp-tile b{font-size:.9rem} .sp-tile .num{font-size:.72rem;color:var(--muted)}
+.sp-tile:hover{border-color:var(--accent)}
+.sp-tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 1.5px var(--accent) inset}
+.sp-tile[aria-pressed="true"] b{color:var(--accent)}
+.actbtn{font:inherit;font-size:.84rem;font-weight:700;padding:5px 12px 5px 10px;border-radius:8px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);cursor:pointer}
+.actbtn::before{content:"▶ ";font-size:.7em;vertical-align:1px}
+.actbtn:hover{background:var(--accent);color:var(--on-accent)}
 .fl-row{display:flex;gap:8px}
 .fl-ic{font:inherit;font-size:1.1rem;font-weight:700;width:44px;height:44px;border-radius:50%;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 16px rgba(0,0,0,.18);display:grid;place-items:center;padding:0;-webkit-user-select:none;user-select:none}
 .fl-ic:hover,.mk-fb:hover{border-color:var(--accent)}
@@ -6854,15 +6871,11 @@ function renderSummary(){
     <div class="card stack sum-head">
       <div class="sec-head"><h2>본문·요약</h2><span class="small muted" id="sum-prog">${sumProgText()}</span></div>
       <p class="small muted">단원마다 본문으로 이해한 뒤 요약 정리로 확인하도록 구성했습니다. 세율·공제·연금 수치는 2026년 10월 현행 법령으로 대조했습니다. 시험은 2026년판 기본서 기준이니 숫자가 교재와 다르면 교재를 따르고, 본문을 읽은 뒤에는 반드시 문제집으로 확인하세요.</p>
-      <div class="chips" role="group" aria-label="보기 방식">
-        <button class="chipbtn" data-act="sum-mode" data-m="full" aria-pressed="${sumMode==='full'}">본문 + 요약</button>
-        <button class="chipbtn" data-act="sum-mode" data-m="sum" aria-pressed="${sumMode==='sum'}">요약만 (복습용 · 도식 포함)</button>
-        <button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button>
-        <button class="btn sm" data-act="book-part" data-p="abbr">약어 사전</button>
-        <button class="btn sm" data-act="book-part" data-p="num">숫자 비교표</button>
-        <button class="btn sm" data-act="book-part" data-p="eve">시험 전날 요약</button>
-        <button class="btn sm" data-act="pr-open" data-k="sum" aria-expanded="false">🖨 인쇄</button>
+      <div class="row between">
+        <div class="seg view" role="group" aria-label="보기 방식"><button data-act="sum-mode" data-m="full" aria-pressed="${sumMode==='full'}">본문 + 요약</button><button data-act="sum-mode" data-m="sum" aria-pressed="${sumMode==='sum'}">요약만 (복습용 · 도식 포함)</button></div>
+        <div class="row"><button class="chipbtn" data-act="book-hl" aria-pressed="${hlOn}">출제 포인트 ${hlOn?'켜짐':'꺼짐'}</button><button class="btn sm" data-act="pr-open" data-k="sum" aria-expanded="false">🖨 인쇄</button></div>
       </div>
+      <div class="apx-row"><span class="small muted">부록·도구</span><button class="apx" data-act="book-part" data-p="abbr">🔤 약어 사전</button><button class="apx" data-act="book-part" data-p="num">🔢 숫자 비교표</button><button class="apx" data-act="book-part" data-p="eve">📝 시험 전날 요약</button><button class="apx" data-act="book-part" data-p="note">🖍 형광펜 노트</button></div>
       ${printPanelHTML('sum')}
       <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ★ = 출제 중요도(예상)</span>
       <div class="tool-box"><span class="tool-lab">내 표시 도구</span>${mkToolsHTML()}</div>
@@ -7476,8 +7489,8 @@ function numHTML(){
   const title=uid=>(ALL_SECS.find(s=>s.id===uid)||{}).title||uid;
   return `<header class="part-head"><span class="eyebrow">부록</span><h2>헷갈리는 숫자 비교표</h2><span class="small muted">본문·요약에 나오는 숫자를 모아 같은 숫자끼리 묶었습니다. 같은 숫자가 여러 단원에 나오면 서로 바꿔 내는 함정이 잦습니다.</span></header>
     <div class="chips" role="group" aria-label="숫자 종류">${Object.entries(NUM_KIND).map(([k,l])=>`<button class="chipbtn" data-act="num-k" data-v="${k}" aria-pressed="${numF.k===k}">${l} <span class="num" style="opacity:.7">${idx[k].length}</span></button>`).join('')}</div>
-    <div class="chips"><button class="chipbtn" data-act="num-s" data-v="all" aria-pressed="${numF.s==='all'}">전 과목</button>${SUBJ.map(s=>`<button class="chipbtn" data-act="num-s" data-v="${s.id}" aria-pressed="${numF.s===s.id}">${s.short}</button>`).join('')}
-      <button class="chipbtn" data-act="num-multi" aria-pressed="${numF.multi}">여러 단원에 나오는 숫자만</button></div>
+    ${subjPickHTML(numF.s, 'num-s', 'v', null, '전체')}
+    <div class="row"><button class="chipbtn" data-act="num-multi" aria-pressed="${numF.multi}">여러 단원에 나오는 숫자만</button></div></div>
     <p class="small muted">${groups.length}개 숫자 · 작은 값부터. 문장은 자동으로 모은 것이라 맥락은 "보러 가기"로 본문에서 확인하세요.</p>
     <div class="stack" style="gap:12px">${groups.map(g=>`<section class="num-g"><div class="num-k"><b class="num">${esc(g.key)}</b><span class="small muted">${new Set(g.items.map(x=>x.u)).size}개 단원 · ${g.items.length}곳</span></div>
       <ul class="num-l">${g.items.map(it=>`<li><span class="small">${chip(it.subj)} <span class="muted">${esc(title(it.u))}</span> <button class="lnk" data-act="book-go" data-u="${it.u}">보러 가기</button></span><div>${numSnippet(it)}</div></li>`).join('')}</ul></section>`).join('')||'<div class="empty">조건에 맞는 숫자가 없습니다.</div>'}</div>`;
@@ -7886,7 +7899,7 @@ function vsHTML(){
   const T=vsBuild(), list=T.filter(t=>vsSubj==='all'||t.subj===vsSubj), n=list.reduce((a,t)=>a+t.items.length,0), st=state.vs||{};
   return `<div class="card stack"><div class="sec-head"><h2>헷갈리는 개념 고르기</h2><span class="small muted">비교표 ${T.length}개 · ${T.reduce((a,t)=>a+t.items.length,0)}문제</span></div>
     <p class="small muted" style="margin:0">본문·요약의 비교표(DB형·DC형, 콜·풋, 적합성·적정성 등)에서 "이 설명은 어느 쪽?"을 자동으로 만듭니다. 시험의 바꿔치기 함정을 잡는 연습입니다.</p>
-    <div class="chips"><button class="chipbtn" data-act="vs-subj" data-s="all" aria-pressed="${vsSubj==='all'}">전 과목</button>${SUBJ.map(s=>`<button class="chipbtn" data-act="vs-subj" data-s="${s.id}" aria-pressed="${vsSubj===s.id}">${s.short}</button>`).join('')}</div>
+    ${subjPickHTML(vsSubj, 'vs-subj', 's', null, '전체')}
     <div class="row"><button class="btn pri" data-act="vs-mix" ${n?'':'disabled'}>섞어서 20문제</button><button class="btn" data-act="vs-wrong" ${Object.values(st).some(v=>v[0]>v[1])?'':'disabled'}>틀렸던 것만</button></div>
     <div class="cl">${list.map(t=>{ const a=t.items.reduce((x,i)=>x+((st[i.id]||[0])[0]),0), c=t.items.reduce((x,i)=>x+((st[i.id]||[0,0])[1]),0);
       return `<div class="cl-item" style="grid-template-columns:1fr auto"><div style="min-width:0"><div style="font-weight:600">${esc(t.cap)}</div><div class="small muted">${chip(t.subj)} ${esc((ALL_SECS.find(s=>s.id===t.u)||{}).title||'')} · ${t.items.length}문제${a?` · 정답률 ${Math.round(c/a*100)}%`:''}</div></div>
@@ -7941,8 +7954,8 @@ const kindPill=q=>{ const k=qKind(q); return k?`<span class="pill kind">${KIND_L
 function kindCardHTML(){
   const c={}; QB.forEach(q=>{ const k=qKind(q); if(k) c[k]=(c[k]||0)+1; });
   return `<div class="card stack"><div class="sec-head"><h2>유형별 연습</h2><span class="small muted">시험에 나오는 문제 모양별로 20문제씩</span></div>
-    <div class="chips">${Object.entries(KIND_LABEL).filter(([k])=>c[k]).map(([k,l])=>`<button class="chipbtn" data-act="kd-run" data-k="${k}">${l} <span class="num" style="opacity:.7">${c[k]}</span></button>`).join('')}</div>
-    <div class="row"><span class="small muted">중요도·난이도로</span><button class="chipbtn" data-act="qm-run" data-f="imp3">★★★ 중요한 것만</button><button class="chipbtn" data-act="qm-run" data-f="imp3d0">★★★ 중 쉬운 것부터</button><button class="chipbtn" data-act="qm-run" data-f="d2">난이도 상만</button><button class="chipbtn" data-act="qm-run" data-f="d0">난이도 하만</button></div>
+    <div class="frow"><span class="flab">유형</span><div class="chips">${Object.entries(KIND_LABEL).filter(([k])=>c[k]).map(([k,l])=>`<button class="actbtn" data-act="kd-run" data-k="${k}">${l} <span class="num" style="opacity:.7">${c[k]}</span></button>`).join('')}</div></div>
+    <div class="frow"><span class="flab">중요도·난이도</span><div class="chips"><button class="actbtn" data-act="qm-run" data-f="imp3">★★★ 중요한 것만</button><button class="actbtn" data-act="qm-run" data-f="imp3d0">★★★ 중 쉬운 것부터</button><button class="actbtn" data-act="qm-run" data-f="d2">난이도 상만</button><button class="actbtn" data-act="qm-run" data-f="d0">난이도 하만</button></div></div>
     <p class="small muted" style="margin:0">사례형 = 상황을 읽고 판단(문제해결형), 부정형 = 옳지 않은 것 고르기, 묶음형 = 가~라 중 맞는 것 모두, 연결형·순서형·빈칸형 = 시험지 형식 문제.</p></div>`;
 }
 /* ---- 문제별 중요도(★1~3)·난이도(하·중·상) ----
@@ -8079,6 +8092,12 @@ function partHTML(subj, mode){
     </nav>`;
 }
 /* ---- 편(과목)·장 고르기: 편은 진도 막대가 있는 카드, 장은 번호 목록, 부록은 작은 링크 ---- */
+/* ---- 공통 고르기 UI: 과목은 작은 카드, 조건은 이름표 + 묶음 버튼, 실행은 ▶ 버튼 ---- */
+function subjPickHTML(cur, act, attr, cnt, allLabel){
+  const ids=STUDY_ORDER, tile=(id,name,n)=>`<button class="sp-tile" data-act="${act}" data-${attr}="${id}" aria-pressed="${cur===id}"><b>${name}</b>${n!=null?`<span class="num">${n}</span>`:''}</button>`;
+  return `<div class="frow"><span class="flab">과목</span><div class="sp-grid">${allLabel?tile('all',allLabel,cnt?cnt.all:null):''}${ids.map(id=>tile(id, SUBJ_BY[id].short, cnt?cnt[id]:null)).join('')}</div></div>`;
+}
+const frow=(label, inner)=>`<div class="frow"><span class="flab">${label}</span><div class="fseg">${inner}</div></div>`;
 function partTilesHTML(ids, cur, act, attr, label, book){
   return `<div class="part-grid" role="group" aria-label="${label}">${ids.map(id=>{ const S=SUBJ_BY[id], us=SUMMARY[id], rd=us.filter(u=>state.read[u.id]).length, on=cur===id;
     return `<button class="part-tile${on?' on':''}" data-act="${act}" data-${attr}="${id}" aria-pressed="${on}">
@@ -8119,7 +8138,7 @@ function renderBook(){
       <div class="progress"><div style="width:${readN/total*100}%;background:var(--accent)"></div></div>
       <div class="row between">
         <div class="row">${bm?`<button class="btn pri" data-act="book-resume">이어 읽기 · 제${partNo(bm.subj)}편 ${unitNo(bm.subj,bm.id)}장</button>`:`<button class="btn pri" data-act="book-part" data-p="guide">처음부터 읽기</button>`}</div>
-        <div class="chips" role="group" aria-label="글자 크기">${['s','m','l'].map(k=>`<button class="chipbtn" data-act="book-fs" data-k="${k}" aria-pressed="${bookFs===k}">${{s:'작게',m:'보통',l:'크게'}[k]}</button>`).join('')}</div>
+        <div class="frow"><span class="flab">글자</span><div class="fseg" role="group" aria-label="글자 크기">${['s','m','l'].map(k=>`<button class="chipbtn" data-act="book-fs" data-k="${k}" aria-pressed="${bookFs===k}">${{s:'작게',m:'보통',l:'크게'}[k]}</button>`).join('')}</div></div>
       </div>
       <div class="row between">
         <span class="small muted"><mark>출제 포인트</mark> = 시험에 자주 나오는 숫자·문장 · ${stars('in1')} = 출제 중요도(예상) · O/X = 시험에 나오는 문장</span>
@@ -9957,7 +9976,7 @@ function quizHomeHTML(){
       <div class="tile"><div class="k">누적 정답률</div><div class="v">${att?Math.round(cor/att*100)+'%':'−'}</div></div>
       <div class="tile"><div class="k">오답노트</div><div class="v" style="${wrongN?'color:var(--bad)':''}">${wrongN}<span class="muted small"> 문항</span></div></div>
     </div>
-    <div class="seg" role="group" aria-label="문제 보기 방식">
+    <div class="seg view" role="group" aria-label="문제 보기 방식">
       <button data-act="qz-view" data-v="exam" aria-pressed="${qzView==='exam'}">시험모드</button>
       <button data-act="qz-view" data-v="study" aria-pressed="${qzView==='study'}">학습·연습</button>
       <button data-act="qz-view" data-v="sum" aria-pressed="${qzView==='sum'}">요약카드</button>
@@ -10006,7 +10025,7 @@ function quizHomeHTML(){
   return tiles + myqCardHTML() + kindCardHTML() + `
     <div class="card stack">
       <div class="sec-head"><h2>과목별 학습·연습</h2><span class="small muted">이해 완료 전체 <b class="num">${studiedAll}</b>/${QB.length}</span></div>
-      <div class="chips">${STUDY_ORDER.map(id=>`<button class="chipbtn" data-act="qz-subj" data-s="${id}" aria-pressed="${qzSubj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${QB.filter(q=>q.s===id).length}</span></button>`).join('')}</div>
+      ${subjPickHTML(qzSubj, 'qz-subj', 's', Object.fromEntries(STUDY_ORDER.map(id=>[id, QB.filter(q=>q.s===id).length])))}
       <div class="study-box stack">
         <div><b>학습모드</b> <span class="small muted">문제와 정답, 보기별 정오, 함정, 필요한 개념, 관련 본문을 한 화면에서 봅니다. 처음 공부할 때는 학습모드로 개념을 잡고, 그다음 풀기로 확인하세요.</span></div>
         <div class="row">
@@ -12427,11 +12446,11 @@ function czHomeHTML(){
     <div class="card stack">
       <div class="sec-head"><h2>빈칸암기</h2><span class="small muted">시험에 나오는 핵심 사실만 골라 직접 만든 빈칸</span></div>
       <p class="small muted">기본서·요약 중 시험에서 헷갈리게 내는 기준 숫자, 기간, 비율, 용어만 골라 한 문장에 한 칸씩 뚫었습니다. 문장 속 나열로 답이 짐작되지 않게 썼습니다. 답을 <b>직접 타이핑</b>하면 바로 맞고 틀림을 알려 주고, 빈칸마다 맞은·틀린 기록과 오답률이 쌓입니다. 단위(%·원·년 등)는 붙여 써도 되고 빼도 됩니다.</p>
-      <div class="chips"><button class="chipbtn" data-act="cz-s" data-s="all" aria-pressed="${czF.s==='all'}">전체 과목</button>${STUDY_ORDER.map(id=>`<button class="chipbtn" data-act="cz-s" data-s="${id}" aria-pressed="${czF.s===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${all.filter(c=>c.s===id).length}</span></button>`).join('')}</div>
+      ${subjPickHTML(czF.s, 'cz-s', 's', null, '전체')}
       <div class="row"><label class="f" style="min-width:min(100%,260px)">단원<select id="cz-unit" ${czF.s==='all'?'disabled':''}><option value="all">${czF.s==='all'?'과목을 먼저 고르세요':'이 과목 전체'}</option>${unitOpts.map(u=>`<option value="${u.id}" ${czF.u===u.id?'selected':''}>${esc(u.title)}</option>`).join('')}</select></label></div>
-      <div class="row"><span class="small muted">종류</span>${[['all','전체'],['term','용어'],['num','숫자']].map(([k,l])=>`<button class="chipbtn" data-act="cz-kind" data-v="${k}" aria-pressed="${czF.kind===k}">${l}</button>`).join('')}</div>
-      <div class="row"><span class="small muted">개수</span>${[10,20,30,50].map(n=>`<button class="chipbtn" data-act="cz-n" data-v="${n}" aria-pressed="${czF.n===n}">${n}개</button>`).join('')}
-        <span class="small muted" style="margin-left:8px">순서</span>${[['weak','약점 순'],['new','안 푼 것 먼저'],['random','무작위'],['wrong','틀린 것만']].map(([k,l])=>`<button class="chipbtn" data-act="cz-order" data-v="${k}" aria-pressed="${czF.order===k}">${l}</button>`).join('')}</div>
+      <div class="frow"><span class="flab">종류</span><div class="fseg">${[['all','전체'],['term','용어'],['num','숫자']].map(([k,l])=>`<button class="chipbtn" data-act="cz-kind" data-v="${k}" aria-pressed="${czF.kind===k}">${l}</button>`).join('')}</div></div>
+      <div class="frow"><span class="flab">개수</span><div class="fseg">${[10,20,30,50].map(n=>`<button class="chipbtn" data-act="cz-n" data-v="${n}" aria-pressed="${czF.n===n}">${n}개</button>`).join('')}</div></div>
+      <div class="frow"><span class="flab">순서</span><div class="fseg">${[['weak','약점 순'],['new','안 푼 것 먼저'],['random','무작위'],['wrong','틀린 것만']].map(([k,l])=>`<button class="chipbtn" data-act="cz-order" data-v="${k}" aria-pressed="${czF.order===k}">${l}</button>`).join('')}</div></div>
       <div class="row"><button class="btn pri" data-act="cz-start">선택한 조건으로 시작 <span class="num">(${list.length}개 중 ${Math.min(czF.n,czF.order==='wrong'?list.filter(c=>czWeak(c.id)>0).length:list.length)}개)</span></button></div>
       <p class="small muted">약점 순은 많이 틀린 빈칸 → 아직 안 푼 빈칸 → 맞힌 빈칸 순으로 냅니다.</p>
     </div>
@@ -12580,16 +12599,9 @@ function renderCards(){
     ${c.u?`<div><button class="lnk" data-act="sum-go" data-subj="${c.s}" data-topic="${esc((ALL_SECS.find(s=>s.id===c.u)||{}).t||'')}">이 카드의 본문 보기</button></div>`:''}` : `<div class="empty">${cf.due?'오늘 복습할 카드를 모두 봤습니다. <b>복습 예정</b>을 끄면 전체 카드를 볼 수 있어요.':cf.unknown?'이 범위 카드를 모두 외웠습니다. <b>모르는 것만</b>을 끄면 전체를 다시 볼 수 있어요.':'이 과목에 카드가 없습니다.'}</div>`;
   $('#p-cards').innerHTML=`
     <div class="sec-head"><h2>암기카드</h2><span class="muted small">외운 카드 <b class="num">${known}</b> / ${all.length}</span></div>
-    <div class="chips">
-      <button class="chipbtn" data-act="c-subj" data-s="all" aria-pressed="${cf.subj==='all'}">전체 <span class="num" style="opacity:.7">${all.length}</span></button>
-      ${STUDY_ORDER.map(id=>`<button class="chipbtn" data-act="c-subj" data-s="${id}" aria-pressed="${cf.subj===id}">${SUBJ_BY[id].short} <span class="num" style="opacity:.7">${all.filter(c=>c.s===id).length}</span></button>`).join('')}
-    </div>
-    <div class="chips">
-      ${['all','core','table','quiz','mine'].map(k=>`<button class="chipbtn" data-act="c-src" data-k="${k}" aria-pressed="${cf.src===k}">${k==='all'?'모든 종류':SRC_LABEL[k]} <span class="num" style="opacity:.7">${k==='all'?all.length:all.filter(c=>c.src===k).length}</span></button>`).join('')}
-      <button class="chipbtn" data-act="c-unk" aria-pressed="${cf.unknown}">모르는 것만</button>
-      <button class="chipbtn" data-act="c-due" aria-pressed="${!!cf.due}">복습 예정 <span class="num" style="opacity:.7">${all.filter(cardDue).length}</span></button>
-      <button class="chipbtn" data-act="c-shuffle">섞기</button>
-    </div>
+    ${subjPickHTML(cf.subj, 'c-subj', 's', Object.assign({all:all.length}, Object.fromEntries(STUDY_ORDER.map(id=>[id, all.filter(c=>c.s===id).length]))), '전체')}
+    <div class="frow"><span class="flab">종류</span><div class="fseg">${['all','core','table','quiz','mine'].map(k=>`<button class="chipbtn" data-act="c-src" data-k="${k}" aria-pressed="${cf.src===k}">${k==='all'?'모든 종류':SRC_LABEL[k]} <span class="num" style="opacity:.7">${k==='all'?all.length:all.filter(c=>c.src===k).length}</span></button>`).join('')}</div></div>
+    <div class="frow"><span class="flab">골라 보기</span><div class="chips"><button class="chipbtn" data-act="c-unk" aria-pressed="${cf.unknown}">모르는 것만</button><button class="chipbtn" data-act="c-due" aria-pressed="${!!cf.due}">복습 예정 <span class="num" style="opacity:.7">${all.filter(cardDue).length}</span></button></div><button class="actbtn" data-act="c-shuffle">섞기</button></div>
     <p class="small muted" style="margin:0">핵심 = 공식·숫자 요점, 표 = 본문 비교표의 한 줄, 문제 = 예상문제 중 단답형 사실 문제입니다. 카드를 눌러 답을 보고 "외웠어요"를 누르면 "모르는 것만"에서 빠집니다.</p>
     ${card}
     <p class="note">수치 카드(연금·세제·보험 기간)는 출제 기준일 법령과 다를 수 있습니다. 교재 최신판과 한 번 대조해 두세요.</p>
